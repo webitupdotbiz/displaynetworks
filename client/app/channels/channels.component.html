@@ -1,0 +1,238 @@
+<app-toast [message]="toast.message"></app-toast>
+
+@if (showHeader()) {
+  <nav class="navbar less-space">
+    <app-navbar-brand></app-navbar-brand>
+    <app-nav-links></app-nav-links>
+  </nav>
+}
+
+<app-loading [condition]="isLoading"></app-loading>
+
+@if (showError) {
+  <div class="card">
+    <h4 class="app-header">Error</h4>
+    <div class="cardblock short-pad">{{ showError }}</div>
+  </div>
+}
+
+@if (hasAccess()) {
+  <div>
+    @if (!isLoading && !isAddView()) {
+      <div class="cardnobb card content-box">
+        @if (!isEditView() && !isAddView()) {
+          <div class="app-header addpad">
+            <div class="addButtonContainer">
+              <button class="green btn app-btn" (click)="enableAdding()" title="Add Channel"><i class="fa fa-plus"></i></button>
+            </div>
+            <div class="searchContainer">
+              <section id="search">
+                <label id="magnify"><i class="fa fa-search" aria-hidden="true"></i><span class="sr-only">Search icons</span></label>
+                <input #sbox id="search-input" (keyup)="onInputChange($event)" class="form-control input-lg" placeholder="{{ getSearchPlaceholder() }}" autocomplete="off" spellcheck="false" autocorrect="off">
+                <a id="search-clear" (click)="clearSearchBox()" class="fa fa-times-circle hide" aria-hidden="true"><span class="sr-only">Clear search</span></a>
+              </section>
+            </div>
+            @if (viewLoading) {
+              <div class="center"><i class="fa fa-spinner fa-pulse fa-2x fa-fw"></i><span class="sr-only"></span></div>
+            }
+          </div>
+        }
+        @if (isEditView() && showHeader()) {
+          <h4 class="app-header editpad"><span class="htext">Edit Channel</span>
+          <app-confirm-modal
+            [modalId]="'confirmEntryModal'"
+            [message]="'This entry will be permanently deleted'"
+            (confirmed)="deleteEntry(entry!)">
+          </app-confirm-modal>
+          <button class="red btn app-btn delete-btn float-right" data-bs-toggle="modal" data-bs-target="#confirmEntryModal" title="Delete"><i class="fa fa-trash"></i></button>
+        </h4>
+      }
+      @if (isEditView()) {
+        <table class="modtable table table-bordered">
+          <tbody>
+            <tr>
+              <td class="lesspad" colspan="4">
+                <form class="form" [formGroup]="editChannelForm" (ngSubmit)="editEntry(editChannelForm.value)">
+                  <div class="form-group left">
+                    <label class="col-sm-1-custom col-form-label scontrol">Name</label>
+                    <div class="col-sm-11 btn-group min-field-width expand">
+                      <input class="form-control" type="text" autocomplete="off" formControlName="editName" name="editName" placeholder="Name" required>
+                    </div>
+                    @if (editName.hasError('pattern')) {
+                      <small class="text-danger d-block text-start mt-1">
+                        Only alphanumeric characters and dashes allowed
+                      </small>
+                    }
+                    @if (editName.hasError('nameTaken')) {
+                      <small class="text-danger d-block text-start mt-1">
+                        Name already taken
+                      </small>
+                    }
+                  </div>
+                  <div class="form-group left">
+                    <label class="col-sm-1-custom col-form-label scontrol">Source</label>
+                    <div class="col-sm-11 btn-group min-field-width expand">
+                      <select class="form-select custom-select" [(ngModel)]="urlInputEdit" [ngModelOptions]="{standalone: true}">
+                        <option value="url" [selected]="!playlist">Source: Content URL</option>
+                        <option value="list" [selected]="playlist">Source: Video Playlist</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="form-group left{{urlInputEdit === 'url' ? '' : ' d-none'}}">
+                    <label class="col-sm-1-custom col-form-label scontrol">Content URL</label>
+                    <div class="col-sm-11 btn-group min-field-width expand"><input class="form-control" autocomplete="off" formControlName="editValue" name="editValue" placeholder="Content URL" (input)="dataChangedEdit($event)"></div>
+                  </div>
+                  <div class="{{urlInputEdit === 'list' ? '' : 'd-none'}}">
+                    <div class="form-group left">
+                      <label class="col-sm-1-custom col-form-label scontrol">Video URLs</label>
+                      <div class="col-sm-11 btn-group min-field-width expand">
+                        <textarea
+                          spellcheck="false"
+                          autocorrect="off"
+                          autocapitalize="off" 
+                          class="form-control" name="listareaedit" id="listareaedit" rows="6"
+                          placeholder="Video URLs" [(ngModel)]="textAreaEdit"
+                          [ngModelOptions]="{standalone: true}" (input)="dataChangedEdit($event)"></textarea>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="form-group left">
+                    <label class="col-sm-1-custom col-form-label scontrol align-top">Tags</label>
+                    <div class="col-sm-11 center btn-group min-field-width expand">
+                      <app-tags [(tags)]="tags" [formGroup]="editChannelForm" class="app-tags"></app-tags>
+                    </div>
+                  </div>
+                  <div class="form-group left">
+                    <label class="col-sm-1-custom col-form-label scontrol align-top">Notes</label>
+                    <div class="col-sm-11 center btn-group min-field-width expand">
+                      <textarea
+                        name="notes-area" id="notesarea" rows="6" 
+                        spellcheck="false"
+                        autocorrect="off"
+                        autocapitalize="off"
+                        class="form-control" formControlName="editNotes"></textarea>
+                    </div>
+                  </div>
+                  <div class="form-group left">
+                    <label class="col-sm-1-custom col-form-label scontrol">Channel URL</label>
+                    <div class="col-sm-11 center btn-group min-field-width expand">
+                      <div class="shareLink left"><button type="button" class="btn btn-link text-decoration-none" (click)="copyToClipboardBrowserUrl(entry!)">{{origin}}/{{ entry?.displayName }}<span class="ms-2"><i class="fa fa-copy"></i></span></button></div>
+                    </div>
+                  </div>
+                  @if (!working) {
+                    <button class="btn button-go" type="submit" [disabled]="!editChannelForm.valid || editChannelForm.pristine"><i class="fa fa-floppy-o"></i></button>
+                  }
+                  @if (!working) {
+                    <button type="button" class="btn button-stop" (click)="cancelEditing()"><i class="fa fa-times"></i></button>
+                  }
+                </form>
+                @if (working) {
+                  <i class="fa fa-spinner fa-pulse fa-2x fa-fw"></i>
+                }
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      }
+      @if (!isEditView() && !isAddView()) {
+        <div>
+          <table class="modtable table table-bordered table-striped">
+            @if (!tableLoading && items.length === 0) {
+              <tbody>
+                <tr>
+                  <td colspan="4" class="align-middle">There are no entries</td>
+                </tr>
+              </tbody>
+            }
+            @if (tableLoading) {
+              <tbody>
+                <tr>
+                  <td colspan="4" class="align-middle"><i class="fa fa-spinner fa-pulse fa-2x fa-fw"></i><span class="sr-only">Loading...</span></td>
+                </tr>
+              </tbody>
+            }
+            @if (!tableLoading) {
+              <tbody>
+                @for (entry of items; track entry) {
+                  <tr>
+                    <td class="button-column vmid butpad edit nrb">
+                      <button class="orange btn app-btn edit-btn" (click)="enableEditing(entry)" title="Edit"><i class="fa fa-pencil"></i></button>
+                    </td>
+                    <td class="vmid nlb nrb"><a class="nav-item app-link" (click)="copyToClipboardBrowserUrl(entry)">{{entry.displayName}}</a></td>
+                    <td class="date-column vmid small-date nlb">{{ formatUpdatedAt(entry?.updatedAt) }}</td>
+                  </tr>
+                }
+              </tbody>
+            }
+          </table>
+        </div>
+      }
+    </div>
+  }
+</div>
+}
+
+@if (isAddView()) {
+  <div class="card content-box">
+    @if (showHeader()) {
+      <h4 class="app-header bb">Add Channel</h4>
+    }
+    <div class="cardblock short-pad">
+      <form class="form" [formGroup]="addChannelForm" (ngSubmit)="addEntry()" style="text-align:center">
+        <div class="form-group">
+          <input autofocus id='addName' class="form-control" type="text" name="addName" formControlName="addName" autocomplete="off" placeholder="Name">
+          @if (addName.hasError('pattern')) {
+            <small class="text-danger d-block text-start mt-1">
+              Only alphanumeric characters and dashes allowed
+            </small>
+          }
+          @if (addName.hasError('nameTaken')) {
+            <small class="text-danger d-block text-start mt-1">
+              Name already taken
+            </small>
+          }
+        </div>
+        <div class="form-group">
+          <select class="form-select custom-select" [(ngModel)]="urlInputAdd" [ngModelOptions]="{standalone: true}">
+            <option value="url">Source: Content URL</option>
+            <option value="list">Source: Video Playlist</option>
+          </select>
+        </div>
+        <div class="form-group{{urlInputAdd === 'url' ? '' : ' d-none'}}">
+          <input class="form-control" name="addValue" formControlName="addValue" autocomplete="off" placeholder="Content URL" (input)="dataChangedAdd($event)">
+        </div>
+        <div class="form-group{{urlInputAdd === 'list' ? '': ' d-none'}}">
+          <textarea 
+            spellcheck="false"
+            autocorrect="off"
+            autocapitalize="off"
+            class="form-control" name="listareaadd" id="listareaadd" rows="6"
+            placeholder="Video URLs one per line" [(ngModel)]="textAreaAdd"
+            [ngModelOptions]="{standalone: true}" (input)="dataChangedAdd($event)"></textarea>
+        </div>
+        <app-tags [(tags)]="tags" [formGroup]="addChannelForm" class="app-tags"></app-tags>
+        <div class="form-group left">
+          <div class="col-sm-12 center btn-group min-field-width expand">
+            <textarea
+              spellcheck="false"
+              autocorrect="off"
+              autocapitalize="off"
+              name="notes-area" id="notesarea" rows="6" placeholder="Notes"
+              class="form-control" formControlName="addNotes"></textarea>
+          </div>
+        </div>
+        <div class="button-box">
+          @if (!working) {
+            <button class="btn button-go" type="submit" [disabled]="!addChannelForm.valid"><i class="fa fa-floppy-o"></i></button>
+          }
+          @if (!working) {
+            <button class="btn button-stop" type="button" (click)="cancelAdding()"><i class="fa fa-times"></i></button>
+          }
+          @if (working) {
+            <i class="fa fa-spinner fa-pulse fa-2x fa-fw"></i>
+          }
+        </div>
+      </form>
+    </div>
+  </div>
+}

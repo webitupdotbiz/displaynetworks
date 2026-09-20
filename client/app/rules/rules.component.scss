@@ -1,0 +1,192 @@
+.table td, .table th {
+   text-align: center;
+}
+.block {
+  width: 100%;
+}
+td.vmid {
+ vertical-align: middle !important;
+ height: 6.66vh;
+}
+td.date-column {
+  min-width: 52px;
+  width: 10%;
+}
+td.button-column {
+  width: 62px;
+  min-width: 62px;
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+}
+td.priority-column {
+  width: 130px;
+  min-width: 130px;
+  text-align: center;
+  padding-right: 0 !important;
+}
+.edit-btn {
+  margin-left: 5px !important;
+}
+.priority-btn {
+  font-size: 16px;
+  
+  &[disabled] {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+.btall {
+  height: 70px;
+}
+.addpad {
+  padding: 6px 4px 6px 3px  !important;
+}
+.butpad {
+  padding: .3em 0 .3em 0 !important;
+}
+.small-date {
+  font-size: 12px;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+td.edit {
+  text-align: left !important;
+}
+
+.center {
+  text-align: center;
+}
+.left {
+  text-align: left;
+}
+
+#search {
+  position: relative;
+  top: 4px;
+  font-size: 22px;
+}
+#magnify {
+  position: absolute;
+  top: 5px;
+  left: 14px;
+}
+#search #search-clear {
+  text-decoration: none;
+  position: absolute;
+  right: 18px;
+  top: 11px;
+  color: #b3b3b3 !important;
+  cursor: pointer;
+}
+#search-input {
+  font-size: 20px;
+}
+#search #search-input, #search .hint {
+  padding-left: 43px;
+  padding-right: 43px;
+  border-radius: 23px;
+}
+.searchContainer {
+  overflow: hidden;
+  margin-top: 3px;
+}
+.addButtonContainer {
+  width: 47px;
+  display: inline;
+  margin-right: 14px;
+  float:left;
+  padding-top: 4px;
+}
+.min-field-width {
+  min-width: 330px;
+}
+.lesspad {
+  padding: 0.75em 0.55em;
+}
+.scontrol {
+  width: 125px;
+}
+.half-mg-bottom {
+  margin-bottom: 0.5rem !important;
+}
+.short-pad {
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+}
+.app-tags {
+  width: 100%;
+}
+.button-box {
+  margin-top: 12px;
+}
+
+.design-row-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.center-dash {
+  font-weight: bold;
+  padding: 0 8px;
+}
+.short-time {
+  max-width: 140px;
+  font-size: 16px;
+}
+.short-date {
+  max-width: 175px;
+  font-size: 16px;
+}
+.checkbox-matrix {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 25px;
+}
+.checkbox-label {
+  font-size: 14px;
+  margin-left: 2px;
+  user-select: none;
+}
+.status-toggle {
+  width: 2.5em !important;
+  height: 1.25em !important;
+  cursor: pointer;
+}
+.inline-time-control {
+  max-width: 115px;
+  font-size: 13px;
+  padding: 2px 4px;
+  height: auto;
+}
+.inline-date-control {
+  max-width: 135px;
+  font-size: 13px;
+  padding: 2px 4px;
+  height: auto;
+}
+
+select {
+  option {
+    box-sizing: content-box;
+    font-size: 24px;
+  }
+}
+
+.tag-badge {
+  background-color: #4a5568;
+  color: #ffffff;
+  font-size: 14px;
+  padding: 6px 10px;
+  border-radius: 4px;
+}
+.tag-close {
+  opacity: 0.7;
+  transition: opacity 0.15s ease-in-out;
+  &:hover {
+    opacity: 1;
+  }
+}
+.cursor-pointer {
+  cursor: pointer;
+}

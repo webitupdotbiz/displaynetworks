@@ -1,0 +1,42 @@
+@if (!auth.loggedIn) {
+  <a routerLink="/_login" routerLinkActive="active" class="nav-item larger-text app-link shorter right-margin navcontrol2 right">
+    <i class="fa fa-sign-in xmore-space"></i>Login
+  </a>
+}
+@if (auth.loggedIn) {
+  <div class="dropdown btn-group app navcontrol right pad-sides">
+    <a id="userDropdownButton" class="dropdown-toggle larger-text app-link shorter" data-bs-toggle="dropdown" aria-expanded="false">
+      <i class="fa fa-user xmore-space"></i> <span class="emailBox">{{auth.currentUser.email}}</span>
+    </a>
+    <ul class="dropdown-menu dropdown-menu-end fillspace" aria-labelledby="userDropdownButton">
+      <li>@if (auth.loggedIn && !auth.isAdmin) {
+        <a routerLink="/_channels" class="dropdown-item nav-item nav-link largest-text app-link taller">
+          <i class="fa fa-heart-o xmore-space"></i>Channels
+        </a>
+      }</li>
+      <li>@if (auth.loggedIn && !auth.isAdmin) {
+        <a routerLink="/_rules" class="dropdown-item nav-item nav-link largest-text app-link taller">
+          <i class="fa fa-star-o xmore-space"></i>Rules
+        </a>
+      }</li>
+      <li>@if (auth.loggedIn && auth.isAdmin) {
+        <a routerLink="/_admin" class="dropdown-item nav-item nav-link largest-text app-link taller">
+          <i class="fa fa-lock xmore-space"></i> Admin
+        </a>
+      }</li>
+      <li>@if (auth.loggedIn && auth.isGroupAdmin) {
+        <a routerLink="/_admin" class="dropdown-item nav-item nav-link largest-text app-link taller">
+          <i class="fa fa-lock xmore-space"></i> Users
+        </a>
+      }</li>
+      <li>@if (auth.loggedIn) {
+        <a (click)="toggleTheme()" class="dropdown-item nav-item nav-link largest-text app-link taller">
+          <i class="fa fa-adjust xmxore-space"></i> {{ getName() }}
+        </a>
+      }</li>
+      <li><a routerLink="/_logout" class="dropdown-item nav-item nav-link largest-text app-link taller">
+        <i class="fa fa-sign-out xmore-space"></i>Logout
+      </a></li>
+    </ul>
+  </div>
+}

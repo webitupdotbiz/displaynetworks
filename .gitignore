@@ -1,0 +1,83 @@
+/dist
+/tmp
+/out-tsc
+
+# dependencies
+/node_modules
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+.angular/
+
+# misc
+/.angular/cache
+/.sass-cache
+/connect.lock
+/coverage
+/libpeerconnection.log
+npm-debug.log
+testem.log
+/typings
+/client/environments/**
+
+# e2e
+/e2e/*.js
+/e2e/*.map
+
+.env-dev
+.env-prod
+
+# test & coverage artifacts
+lcov.info
+coverage-final.json
+clover.xml
+lcov-report/
+test-results/
+**/test-results/
+playwright-report/
+blob-report/
+playwright-report.zip
+.nyc_output/
+test-results.xml
+junit*.xml
+report-*.zip
+
+# System & OS Files
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.tmp
+*.bak
+*.swp
+
+# Logs & Runtime
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment & Local Secrets
+.env
+.env.*
+!.env.example
+
+# VS Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+*.code-workspace
+
+# Build / Output Additions
+/build
+/out
+/public
+*.tsbuildinfo
+

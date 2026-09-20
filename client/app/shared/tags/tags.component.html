@@ -1,0 +1,12 @@
+<div class="tag-input">
+  <input class="form-control" type="text" id="tagsSet" placeholder="Type Tag Name then Enter key" [(ngModel)]="tagsSet" (keydown.enter)="onTagsSetKeydown()" autocomplete="off" #tagsSetRef/>
+</div>
+
+<div class="tag-box">
+  @for (tag of tags; track tag; let ii = $index) {
+    <div class="tag">
+      {{ tag }}
+      <span class="tag-x"><i class="fa fa-times" (click)="dropTag(ii)"></i></span>
+    </div>
+  }
+</div>

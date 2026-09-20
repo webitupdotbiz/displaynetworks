@@ -1,0 +1,7 @@
+{
+  "watch": ["dist/server"],
+  "ext": "js,mjs,cjs,json",
+  "ignore": ["src/", "dist/client/"],
+  "delay": "1000"
+}
+

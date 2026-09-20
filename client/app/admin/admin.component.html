@@ -1,0 +1,169 @@
+<app-toast [message]="toast.message"></app-toast>
+@if (showHeader()) {
+  <nav class="navbar less-space">
+    <app-navbar-brand></app-navbar-brand>
+    <app-nav-links></app-nav-links>
+  </nav>
+}
+<app-loading [condition]="isLoading"></app-loading>
+@if (showError) {
+  <div class="card">
+    <h4 class="app-header">Error</h4>
+    <div class="cardblock short-pad">{{ showError }}
+    </div>
+  </div>
+}
+@if (hasAccess()) {
+  <div>
+    @if (!isLoading && !isAddView()) {
+      <div class="cardnobb card content-box">
+        @if (!isEditView() && !isAddView()) {
+          <div class="app-header addpad">
+            <div class="addButtonContainer">
+              <button class="green btn app-btn" (click)="enableAdding()" [title]="addButtonTitle"><i class="fa fa-plus"></i></button>
+            </div>
+            <div class="searchContainer">
+              <section id="search">
+                <label id="magnify"><i class="fa fa-search" aria-hidden="true"></i><span class="sr-only">Search icons</span></label>
+                <input #sbox id="search-input" (keyup)="onInputChange($event)" class="form-control input-lg" placeholder="{{ getSearchPlaceholder() }}" autocomplete="off" spellcheck="false" autocorrect="off">
+                <a id="search-clear" (click)="clearSearchBox()" class="fa fa-times-circle hide" aria-hidden="true"><span class="sr-only">Clear search</span></a>
+              </section>
+            </div>
+            @if (viewLoading) {
+              <div class="center"><i class="fa fa-spinner fa-pulse fa-2x fa-fw"></i><span class="sr-only"></span></div>
+            }
+          </div>
+        }
+        @if (isEditView() && showHeader() && user) {
+          <h4 class="app-header editpad"><span class="htext">Edit User</span>
+          <app-confirm-modal
+            [modalId]="'confirmUserModal'"
+            [message]="'Are you sure you want to delete this user?'"
+            (confirmed)="deleteUser(user)">
+          </app-confirm-modal>
+          <button class="red btn app-btn delete-btn float-right" data-bs-toggle="modal" data-bs-target="#confirmUserModal" title="Delete"><i class="fa fa-trash"></i></button>
+        </h4>
+      }
+      @if (isEditView() && user) {
+        <table class="modtable table table-bordered">
+          <tbody>
+            <tr>
+              <td class="lesspad" colspan="4">
+                <form class="form" [formGroup]="editUserForm" (ngSubmit)="editUser(editUserForm.value)">
+                  <div class="form-group left">
+                    <label class="col-sm-1-custom col-form-label scontrol">Email</label>
+                    <div class="col-sm-11 btn-group min-field-width expand">{{user ? user.email : ""}}</div>
+                  </div>
+                  <div class="form-group left content-box">
+                    <label class="col-sm-1-custom col-form-label scontrol align-top">Tags</label>
+                    <div class="col-sm-11 center btn-group min-field-width expand">
+                      <app-tags [(tags)]="tags" [formGroup]="editUserForm" class="app-tags"></app-tags>
+                    </div>
+                  </div>
+                  <div class="form-group left content-box">
+                    <label class="col-sm-1-custom col-form-label scontrol align-top">Notes</label>
+                    <div class="col-sm-11 center btn-group min-field-width expand">
+                      <textarea
+                        spellcheck="false"
+                        autocorrect="off"
+                        autocapitalize="off"
+                        name="notes-area" id="notesarea" rows="6"
+                        class="form-control" formControlName="editNotes"></textarea>
+                    </div>
+                  </div>
+                  <button class="btn button-go" type="submit" [disabled]="!editUserForm.valid || editUserForm.pristine"><i class="fa fa-floppy-o"></i></button>
+                  <button type="button" class="btn button-stop" (click)="cancelEditing()"><i class="fa fa-times"></i></button>
+                </form>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      }
+      @if (!isEditView() && !isAddView()) {
+        <div>
+          <table class="modtable table table-bordered table-striped">
+            @if (!tableLoading && items.length === 0) {
+              <tbody>
+                <tr>
+                  <td colspan="4" class="align-middle">{{ noUsersMessage }}</td>
+                </tr>
+              </tbody>
+            }
+            @if (tableLoading) {
+              <tbody>
+                <tr>
+                  <td colspan="4" class="align-middle"><i class="fa fa-spinner fa-pulse fa-2x fa-fw"></i><span class="sr-only">Loading...</span></td>
+                </tr>
+              </tbody>
+            }
+            @if (!tableLoading) {
+              <tbody>
+                @for (userObj of items; track userObj) {
+                  <tr>
+                    <td class="button-column vmid butpad edit nrb">
+                      <button class="orange btn app-btn edit-btn" (click)="enableEditing(userObj)" title="Edit"><i class="fa fa-pencil"></i></button>
+                    </td>
+                    <td class="vmid nlb nrb">
+                      <span class="d-flex align-items-center" [class.text-muted]="!userObj.active" title="User is {{ userObj.active ? 'Active' : 'Inactive' }}">
+                        <i
+                          class="fa m-2 flex-shrink-0"
+                          [ngClass]="userObj.active ? 'fa-circle text-success' : 'fa-circle text-danger'">
+                        </i>
+                        <span class="larger-text flex-grow-1 text-center">{{userObj.email}}</span>
+                      </span>
+                    </td>
+                    <td class="date-column vmid small-date nlb">{{ formatUpdatedAt(userObj.updatedAt) }}</td>
+                    <td class="button-column vmid butpad edit nrb">
+                      <button class="green btn app-btn resend-btn" (click)="resendInvite(userObj)" [disabled]="userObj.active" title="Resend Invite"><i class="fa fa-send-o"></i></button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            }
+          </table>
+        </div>
+      }
+    </div>
+  }
+</div>
+}
+
+@if (isAddView()) {
+  <div class="card content-box">
+    @if (showHeader()) {
+      <h4 class="app-header bb">{{addButtonTitle}}</h4>
+    }
+    <div class="cardblock short-pad">
+      <form class="form" [formGroup]="addUserForm" (ngSubmit)="addUser()" style="text-align:center">
+        <div class="form-group">
+          <input autofocus id='addEmail' type='email' class="form-control" name="addEmail" formControlName="addEmail" autocomplete="off" placeholder="Email">
+          @if (addUserForm.get('addEmail')?.invalid && (addUserForm.get('addEmail')?.touched || addUserForm.get('addEmail')?.dirty)) {
+            <div class="text-start">
+              @if (addUserForm.get('addEmail')?.errors?.['required']) {
+                <small class="text-danger">Email is required.</small>
+              }
+              @if (addUserForm.get('addEmail')?.errors?.['email']) {
+                <small class="text-danger">Invalid email address.</small>
+              }
+            </div>
+          }
+        </div>
+        <app-tags [(tags)]="tags" [formGroup]="addUserForm" class="app-tags"></app-tags>
+        <div class="form-group left content-box">
+          <div class="col-sm-12 center btn-group min-field-width expand">
+            <textarea
+              spellcheck="false"
+              autocorrect="off"
+              autocapitalize="off"
+              name="notes-area" id="notesarea" rows="6"
+              placeholder="Notes" class="form-control" formControlName="addNotes"></textarea>
+          </div>
+        </div>
+        <div class="button-box">
+          <button class="btn button-go" type="submit" [disabled]="!addUserForm.valid"><i class="fa fa-floppy-o"></i></button>
+          <button class="btn button-stop" type="button" (click)="cancelAdding()"><i class="fa fa-times"></i></button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

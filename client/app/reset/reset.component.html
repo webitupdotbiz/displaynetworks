@@ -1,0 +1,56 @@
+<nav class="navbar less-space">
+  <app-navbar-brand></app-navbar-brand>
+  @if (!auth.loggedIn) {
+    <a routerLink="/_login" class="nav-item larger-text app-link shorter right-margin navcontrol2 right" routerLinkActive="active">
+      <i class="fa fa-sign-in xmore-space"></i>Login
+    </a>
+  }
+</nav>
+
+@if (loading) {
+  <div class="card">
+    <h4 class="app-header">Verification in progress</h4>
+    <div class="cardblock">
+      Your account is being verified and a response will be shown soon.
+    </div>
+  </div>
+}
+
+@if (!loading && showError) {
+  <div class="card">
+    <h4 class="app-header">Unable To Reset Password</h4>
+    <div class="cardblock">
+      Reset password token is invalid or has expired.
+    </div>
+  </div>
+}
+
+@if (!loading && showSuccess) {
+  <div class="card">
+    <h4 class="app-header">Success</h4>
+    <div class="cardblock">
+      Your password has been successfully updated. Please <a routerLink="/_login">log in</a>.
+    </div>
+  </div>
+}
+
+@if (!loading && showForm) {
+  <div class="card">
+    <h4 class="app-header">Enter New Password</h4>
+    <div class="cardblock">
+      <form [formGroup]="resetForm" (ngSubmit)="submitResetPassword()">
+        <div class="input-group" [ngClass]="{ 'has-danger': isFieldInvalid(passwordControl) }">
+          <span class="input-group-prepend"><span class="input-group-text"><i class="fa fa-key"></i></span></span>
+          <input class="form-control cht" type="password" name="password" formControlName="password" autocomplete="new-password" placeholder="Password">
+        </div>
+
+        <div class="input-group" [ngClass]="{ 'has-danger': isConfirmInvalid() }">
+          <span class="input-group-prepend"><span class="input-group-text"><i class="fa fa-check"></i></span></span>
+          <input class="form-control cht" type="password" name="confirm" formControlName="confirm" autocomplete="new-password" placeholder="Confirm Password">
+        </div>
+
+        <button class="btn btn-primary" type="submit" [disabled]="resetForm.invalid"><i class="fa fa-user-plus"></i> Submit</button>
+      </form>
+    </div>
+  </div>
+}

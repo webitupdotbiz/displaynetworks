@@ -1,0 +1,92 @@
+.modal-success {
+    color: #636363;
+    width: 400px;
+    border: 1px solid #444;
+    margin: 14vh auto;
+}
+
+.modal-success .modal-content {
+    padding: 20px;
+    border-radius: 5px;
+    border: none;
+    text-align: center;
+    font-size: 16px;
+}
+
+.modal-success .modal-header {
+    border-bottom: none;
+    position: relative;
+    padding-bottom: 0;
+}
+
+.modal-success h4 {
+    text-align: center;
+    font-size: 26px;
+    margin: 20px 0;
+}
+
+.modal-success .modal-body {
+    color: #999;
+    padding: 0;
+}
+
+.modal-success .modal-footer {
+    border: none;
+    text-align: center;
+    border-radius: 5px;
+    font-size: 14px;
+    padding: 10px 15px;
+}
+
+.modal-success .modal-footer a {
+    color: #999;
+}
+
+.modal-success .icon-box {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto;
+    border-radius: 50%;
+    z-index: 9;
+    text-align: center;
+    border: 3px solid #28a745;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-success .checkmark {
+    font-size: 46px;
+    color: #28a745;
+    font-weight: bold;
+}
+
+.modal-success .btn {
+    color: #fff;
+    border-radius: 4px;
+    text-decoration: none;
+    transition: all 0.4s;
+    line-height: normal;
+    min-width: 120px;
+    border: none;
+    min-height: 40px;
+    border-radius: 3px;
+    margin: 0 5px;
+    font-size: 15px;
+}
+
+.modal-success .btn-primary {
+    background: #28a745;
+    cursor: pointer;
+}
+
+.modal-success .btn-primary:hover,
+.modal-success .btn-primary:focus {
+    background: #218838;
+}
+
+.trigger-btn {
+    display: inline-block;
+    margin: 100px auto;
+}
+

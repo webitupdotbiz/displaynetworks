@@ -1,0 +1,22 @@
+.alert {
+	z-index: 999;
+	position: fixed;
+	bottom: 15px;
+	left: 25%;
+	width: 50%;
+	min-width: 256px;
+	opacity: 0.9;
+}
+.close {
+	border: 0;
+    background-color: inherit;
+	color: inherit;
+	cursor: pointer;
+	float: right;
+	line-height: 18px;
+}
+.close-x {
+	font-size: 25px;
+	position: relative;
+	top: 1px;
+}

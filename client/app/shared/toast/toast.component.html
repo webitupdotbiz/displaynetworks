@@ -1,0 +1,8 @@
+@if (message.body) {
+  <div class="alert alert-{{message.type}}" role="alert">
+    {{message.body}}
+    <button type="button" class="close" data-bs-dismiss="alert" aria-label="Close">
+      <span aria-hidden="true" class="close-x">&times;</span>
+    </button>
+  </div>
+}

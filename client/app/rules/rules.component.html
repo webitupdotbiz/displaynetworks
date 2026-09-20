@@ -1,0 +1,519 @@
+<app-toast [message]="toast.message"></app-toast>
+
+@if (showHeader()) {
+  <nav class="navbar less-space">
+    <app-navbar-brand></app-navbar-brand>
+    <app-nav-links></app-nav-links>
+  </nav>
+}
+
+<app-loading [condition]="isLoading"></app-loading>
+
+@if (showError) {
+  <div class="card">
+    <h4 class="app-header">Error</h4>
+    <div class="cardblock short-pad">{{ showError }}</div>
+  </div>
+}
+
+@if (hasAccess()) {
+  <div>
+    @if (!isLoading && !isAddView()) {
+      <div class="cardnobb card content-box">
+        @if (!isEditView() && !isAddView()) {
+          <div class="app-header addpad">
+            <div class="addButtonContainer">
+              <button class="green btn app-btn" (click)="enableAdding()" title="Add Rule"><i class="fa fa-plus"></i></button>
+            </div>
+            <div class="searchContainer">
+              <section id="search">
+                <label id="magnify"><i class="fa fa-search" aria-hidden="true"></i><span class="sr-only">Search Rules</span></label>
+                <input #sbox id="search-input" (keyup)="onInputChange($event)" class="form-control input-lg" placeholder="{{ getSearchPlaceholder() }}" autocomplete="off" spellcheck="false" autocorrect="off">
+                <a id="search-clear" (click)="clearSearchBox()" class="fa fa-times-circle hide" aria-hidden="true"><span class="sr-only">Clear search</span></a>
+              </section>
+            </div>
+          </div>
+        }
+        @if (isEditView() && showHeader()) {
+          <h4 class="app-header editpad"><span class="htext">Edit Override Rule</span>
+          <app-confirm-modal
+            [modalId]="'confirmRuleModal'"
+            [message]="'This rule parameters will be permanently deleted'"
+            (confirmed)="deleteEntry(entry!)">
+          </app-confirm-modal>
+          <button class="red app-btn btn float-right" data-bs-toggle="modal" data-bs-target="#confirmRuleModal" title="Delete"><i class="fa fa-trash"></i></button>
+        </h4>
+      }
+      @if (isEditView()) {
+        <table class="modtable table table-bordered">
+          <tbody>
+            <tr>
+              <td class="lesspad" colspan="4">
+                <form class="form" [formGroup]="editRuleForm" (ngSubmit)="editEntry(editRuleForm.getRawValue())">
+                  <div class="form-group left">
+                    <label class="col-sm-1-custom col-form-label scontrol">Enabled</label>
+                    <div class="col-sm-11 btn-group align-items-center">
+                      <div class="form-check form-switch mb-2">
+                        <input class="form-check-input status-toggle" type="checkbox" formControlName="editIsActive" id="editIsActive">
+                      </div>
+                    </div>
+                  </div>
+                  <div class="form-group left">
+                    <label class="col-sm-1-custom col-form-label scontrol">Rule Name</label>
+                    <div class="col-sm-11 btn-group min-field-width expand">
+                      <input class="form-control" type="text" autocomplete="off" formControlName="editName" placeholder="Name">
+                    </div>
+                  </div>
+                  <div class="form-group left">
+                    <label class="col-sm-1-custom col-form-label scontrol">Source</label>
+                    <div class="col-sm-11 btn-group min-field-width expand">
+                      <select class="form-select custom-select" [(ngModel)]="urlInputEdit" [ngModelOptions]="{standalone: true}">
+                        <option value="url" [selected]="!entry || !buildPlaylist(entry)">Source: Content URL</option>
+                        <option value="list" [selected]="entry && !!buildPlaylist(entry)">Source: Video Playlist</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="form-group left{{urlInputEdit === 'url' ? '' : ' d-none'}}">
+                    <label class="col-sm-1-custom col-form-label scontrol">Content URL</label>
+                    <div class="col-sm-11 btn-group min-field-width expand">
+                      <input class="form-control" type="text" autocomplete="off" formControlName="editOverrideUrl" placeholder="Content URL" (input)="dataChangedEdit($event)">
+                    </div>
+                  </div>
+                  <div class="{{urlInputEdit === 'list' ? '' : 'd-none'}}">
+                    <div class="form-group left">
+                      <label class="col-sm-1-custom col-form-label scontrol">Video URLs</label>
+                      <div class="col-sm-11 btn-group min-field-width expand">
+                        <textarea
+                          spellcheck="false"
+                          autocorrect="off"
+                          autocapitalize="off"
+                          class="form-control" name="listareaedit" id="listareaedit" rows="6"
+                          placeholder="Video URLs one per line" [(ngModel)]="textAreaEdit"
+                          [ngModelOptions]="{standalone: true}" (input)="dataChangedEdit($event)"></textarea>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="form-group left mb-3">
+                    <label class="col-sm-1-custom col-form-label scontrol">Match Strategy</label>
+                    <div class="col-sm-11 btn-group min-field-width expand">
+                      <select class="form-select custom-select" formControlName="editMatchStrategy">
+                        <option value="ANY">ANY tag causes rule to match</option>
+                        <option value="ALL">ALL tags causes rule to match</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="form-group left">
+                    <div class="col-sm-12 btn-group min-field-width expand d-flex flex-column align-items-start">
+                      <select class="form-select custom-select w-100" [formControl]="tagSelectControl" (change)="onTagSelected($event)">
+                        <option [value]="''" disabled selected>Select Tags to Apply</option>
+                        @for (tag of selectableTags; track tag) {
+                          <option [value]="tag">{{ tag }}</option>
+                        }
+                      </select>
+                      <div class="tag-container mt-2 w-100 d-flex flex-wrap gap-1">
+                        @for (tag of currentTags; track tag) {
+                          <span class="tag ms-1">
+                            {{ tag }}
+                            <i class="fa fa-times tag-x" (click)="removeTag(tag)"></i>
+                          </span>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                  <div class="form-group left">
+                    <label class="col-sm-1-custom col-form-label scontrol align-top">Notes</label>
+                    <div class="col-sm-11 center btn-group min-field-width expand">
+                      <textarea 
+                        spellcheck="false"
+                        autocorrect="off"
+                        autocapitalize="off"
+                        name="notes-area" id="notesarea" rows="6" class="form-control"
+                        formControlName="editNotes"></textarea>
+                    </div>
+                  </div>
+                  <div
+                    class="border rounded p-3 my-3"
+                    [class.border-danger]="editTimeRangeInvalid || editDateRangeInvalid">
+                    <h5 class="text-start mb-3">Time Restrictions</h5>
+                    <div class="form-group left mb-3">
+                      <label class="col-sm-1-custom col-form-label scontrol">Scheduler</label>
+                      <div class="col-sm-12 btn-group min-field-width expand">
+                        <select class="form-select custom-select" formControlName="editScheduleType">
+                          <option value="CLIENT_CLOCK">Local Clock</option>
+                          <option value="GLOBAL_INSTANT">Global Instant (UTC)</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="form-group left mb-3">
+                      <label class="col-sm-1-custom col-form-label scontrol">Timezone</label>
+                      <div class="col-sm-12 btn-group min-field-width expand d-block">
+                        <app-timezone-select formControlName="editTimezone"></app-timezone-select>
+                      </div>
+                      <div class="small text-muted mt-1">
+                        @if (editRuleForm.controls.editScheduleType.value === 'CLIENT_CLOCK') {
+                          Each display changes differently based on its local timezone. Selected timezone is fallback.
+                        } @else {
+                          All displays switch at the same instant everywhere. That time is shown in the selected timezone.
+                        }
+                      </div>
+                    </div>
+                    <div class="form-check mb-2">
+                      <input
+                        class="bborder form-check-input"
+                        type="checkbox"
+                        formControlName="editUseTimeRestriction"
+                        id="editUseTimeRestriction">
+                      <label class="float-start ms-1" for="editUseTimeRestriction">
+                        Restrict Time of Day
+                      </label>
+                    </div>
+                    @if (editRuleForm.controls.editUseTimeRestriction.value) {
+                      <div>
+                        <div class="form-group left">
+                          <div class="col-sm-11 design-row-group combinations">
+                            <input
+                              class="form-control short-time mx-1"
+                              type="time"
+                              formControlName="editStartTime">
+                            <span class="center-dash">to</span>
+                            <input
+                              class="form-control short-time mx-1"
+                              type="time"
+                              formControlName="editEndTime">
+                          </div>
+                          @if (editTimeRangeInvalid) {
+                            <div class="small text-danger mt-1">
+                              End time must be different from start time.
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    }
+                    <div class="form-check mb-2 mt-3">
+                      <input
+                        class="bborder form-check-input"
+                        type="checkbox"
+                        formControlName="editUseDayRestriction"
+                        id="editUseDayRestriction">
+                      <label class="float-start ms-1" for="editUseDayRestriction">
+                        Restrict Day of Week
+                      </label>
+                    </div>
+                    @if (editRuleForm.controls.editUseDayRestriction.value) {
+                      <div>
+                        <div class="checkbox-matrix">
+                          @for (day of daysOfWeekList; track day) {
+                            <div
+                              class="form-check form-check-inline mx-2">
+                              <input
+                                class="bborder form-check-input"
+                                type="checkbox"
+                                [checked]="isDaySelected(day.value)"
+                                (change)="toggleDay(day.value)"
+                                id="edit-day-{{day.value}}">
+                              <label
+                                class="float-start ms-1"
+                                for="edit-day-{{day.value}}">
+                                {{ day.label }}
+                              </label>
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    }
+                    <div class="form-check mb-2 mt-3">
+                      <input
+                        class="bborder form-check-input"
+                        type="checkbox"
+                        formControlName="editUseDateRestriction"
+                        id="editUseDateRestriction">
+                      <label class="float-start ms-1" for="editUseDateRestriction">
+                        Restrict Date Range
+                      </label>
+                    </div>
+                    @if (editRuleForm.controls.editUseDateRestriction.value) {
+                      <div>
+                        <div class="form-group left">
+                          <div class="col-sm-11 design-row-group combinations">
+                            <input
+                              class="form-control short-date mx-1"
+                              type="date"
+                              formControlName="editStartDate">
+                            <span class="center-dash">until</span>
+                            <input
+                              class="form-control short-date mx-1"
+                              type="date"
+                              formControlName="editEndDate">
+                          </div>
+                          @if (editDateRangeInvalid) {
+                            <div class="small text-danger mt-1">
+                              End date must be on or after start date.
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                  @if (!working) {
+                    <button class="btn button-go" type="submit" [disabled]="!editRuleForm.valid || editRuleForm.pristine || editTimeRangeInvalid || editDateRangeInvalid"><i class="fa fa-floppy-o"></i></button>
+                  }
+                  @if (!working) {
+                    <button type="button" class="btn button-stop" (click)="cancelEditing()"><i class="fa fa-times"></i></button>
+                  }
+                </form>
+                @if (working) {
+                  <i class="fa fa-spinner fa-pulse fa-2x fa-fw"></i>
+                }
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      }
+      @if (!isEditView() && !isAddView()) {
+        <div>
+          <table class="modtable table table-bordered table-striped">
+            @if (!tableLoading && items.length === 0) {
+              <tbody>
+                <tr><td colspan="4" class="align-middle">There are no override rules</td></tr>
+              </tbody>
+            }
+            @if (tableLoading) {
+              <tbody>
+                <tr><td colspan="4" class="align-middle"><i class="fa fa-spinner fa-pulse fa-2x fa-fw"></i><span class="sr-only">Querying database...</span></td></tr>
+              </tbody>
+            }
+            @if (!tableLoading) {
+              <tbody>
+                @for (rule of items; track rule; let idx = $index) {
+                  <tr>
+                    <td class="button-column vmid butpad edit nrb">
+                      <button class="orange btn app-btn edit-btn" (click)="enableEditing(rule)" title="Edit Parameters"><i class="fa fa-pencil"></i></button>
+                    </td>
+                    <td class="vmid nlb nrb text-start">
+                      <span class="d-flex align-items-center" [class.text-muted]="!rule.isActive" title="Rule is {{ rule.isActive ? 'Enabled' : 'Disabled' }}">
+                        <i
+                          class="fa m-2 flex-shrink-0"
+                          [ngClass]="rule.isActive ? 'fa-circle text-success' : 'fa-circle text-danger'">
+                        </i>
+                        <span class="larger-text flex-grow-1 text-center">
+                          {{ rule.name }}
+                        </span>
+                      </span>
+                    </td>
+                    <td class="date-column vmid small-date nlb nrb">{{ formatUpdatedAt(rule?.updatedAt) }}</td>
+                    <td class="priority-column vmid nlb nrb">
+                      <button class="orange app-btn priority-btn btn" [disabled]="idx === 0" (click)="movePriority(idx, 'up')" title="Increase Priority"><i class="fa fa-chevron-up"></i></button>
+                      <button class="me-0 orange app-btn priority-btn btn" [disabled]="idx === items.length - 1" (click)="movePriority(idx, 'down')" title="Decrease Priority"><i class="fa fa-chevron-down"></i></button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            }
+          </table>
+        </div>
+      }
+    </div>
+  }
+</div>
+}
+
+@if (isAddView()) {
+  <div class="card content-box">
+    @if (showHeader()) {
+      <h4 class="app-header editpad btall"><span class="htext">Add Override Rule</span></h4>
+    }
+    <table class="modtable table table-bordered">
+      <tbody>
+        <tr>
+          <td class="lesspad" colspan="4">
+            <form class="form" [formGroup]="addRuleForm" (ngSubmit)="addRule()">
+              <div class="form-group left">
+                <div class="col-sm-12 btn-group min-field-width expand">
+                  <input autofocus id="addName" class="form-control" type="text" autocomplete="off" formControlName="addName" placeholder="Rule Name">
+                </div>
+              </div>
+              <div class="form-group left">
+                <div class="col-sm-12 btn-group min-field-width expand">
+                  <select class="form-select custom-select" [(ngModel)]="urlInputAdd" [ngModelOptions]="{standalone: true}" (change)="onSourceTypeChangeAdd()">
+                    <option value="url">Source: Content URL</option>
+                    <option value="list">Source: Video Playlist</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group left{{urlInputAdd === 'url' ? '' : ' d-none'}}">
+                <div class="col-sm-12 btn-group min-field-width expand">
+                  <input class="form-control" type="text" autocomplete="off" formControlName="addOverrideUrl" placeholder="Content URL" (input)="dataChangedAdd($event)">
+                </div>
+              </div>
+              <div class="{{urlInputAdd === 'list' ? '' : 'd-none'}}">
+                <div class="form-group left">
+                  <div class="col-sm-12 btn-group min-field-width expand">
+                    <textarea
+                      spellcheck="false"
+                      autocorrect="off"
+                      autocapitalize="off"
+                      class="form-control" name="listareaadd" id="listareaadd" rows="6"
+                      placeholder="Video URLs one per line" [(ngModel)]="textAreaAdd"
+                      [ngModelOptions]="{standalone: true}" (input)="dataChangedAdd($event)"></textarea>
+                  </div>
+                </div>
+              </div>
+              <div class="form-group left">
+                <div class="col-sm-12 btn-group min-field-width expand">
+                  <select class="form-select custom-select" formControlName="addMatchStrategy">
+                    <option value="ANY">Match Strategy: ANY Tag Causes Rule to Match</option>
+                    <option value="ALL">Match Strategy: ALL Tags Causes Rule to Match</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group left mt-3">
+                <div class="col-sm-12 btn-group min-field-width expand d-flex flex-column align-items-start">
+                  <select class="form-select custom-select w-100" [formControl]="tagSelectControl" (change)="onTagSelected($event)">
+                    <option [value]="''" disabled selected>Select Tags to Apply</option>
+                    @for (tag of selectableTags; track tag) {
+                      <option [value]="tag">{{ tag }}</option>
+                    }
+                  </select>
+                  <div class="tag-container mt-2 mb-2 w-100 d-flex flex-wrap gap-1">
+                    @for (tag of currentTags; track tag) {
+                      <span class="badge tag me-1 mb-1 d-inline-flex align-items-center">
+                        {{ tag }}
+                        <i class="fa fa-times ms-2 cursor-pointer tag-close" (click)="removeTag(tag)"></i>
+                      </span>
+                    }
+                  </div>
+                </div>
+              </div>
+              <div class="form-group left">
+                <div class="col-sm-12 center btn-group min-field-width expand">
+                  <textarea
+                    spellcheck="false"
+                    autocorrect="off"
+                    autocapitalize="off"
+                    name="notes-area" id="notesarea" rows="6" placeholder="Notes" class="form-control"
+                    formControlName="addNotes"></textarea>
+                </div>
+              </div>
+              <div class="mx-1 p-1">
+                <div
+                  class="border rounded p-3 my-2"
+                  [class.border-danger]="addTimeRangeInvalid || addDateRangeInvalid">
+                  <h5 class="text-start mb-3">Time Restrictions</h5>
+                  <div class="form-group left mt-3">
+                    <div class="col-sm-12 btn-group min-field-width expand">
+                      <select class="form-select custom-select" formControlName="addScheduleType">
+                        <option value="CLIENT_CLOCK">Scheduler: Local Clock</option>
+                        <option value="GLOBAL_INSTANT">Scheduler: Global Instant (UTC)</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="form-group left my-3">
+                    <div class="col-sm-12 btn-group min-field-width expand d-block">
+                      <app-timezone-select formControlName="addTimezone"></app-timezone-select>
+                    </div>
+                    <div class="small text-muted mb-1">
+                      @if (addRuleForm.controls.addScheduleType.value === 'CLIENT_CLOCK') {
+                          Each display changes differently based on its local timezone. Selected timezone is fallback.
+                        } @else {
+                          All displays switch at the same instant everywhere. That time is shown in the selected timezone.
+                      }
+                    </div>
+                  </div>
+                  <div class="form-check mb-2">
+                    <input
+                      class="bborder form-check-input"
+                      type="checkbox"
+                      formControlName="addUseTimeRestriction"
+                      id="addUseTimeRestriction">
+                    <label class="float-start ms-1" for="addUseTimeRestriction">
+                      Restrict Time of Day
+                    </label>
+                  </div>
+                  @if (addRuleForm.controls.addUseTimeRestriction.value) {
+                    <div>
+                      <div class="form-group left">
+                        <div class="col-sm-12 design-row-group combinations">
+                          <input class="form-control short-time mx-1" type="time" formControlName="addStartTime">
+                          <span class="center-dash">to</span>
+                          <input class="form-control short-time mx-1" type="time" formControlName="addEndTime">
+                        </div>
+                        @if (addTimeRangeInvalid) {
+                          <div class="small text-danger mt-1">
+                            End time must be different from start time.
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  }
+                  <div class="form-check mb-2 mt-3">
+                    <input
+                      class="bborder form-check-input"
+                      type="checkbox"
+                      formControlName="addUseDayRestriction"
+                      id="addUseDayRestriction">
+                    <label class="float-start ms-1" for="addUseDayRestriction">
+                      Restrict Day of Week
+                    </label>
+                  </div>
+                  @if (addRuleForm.controls.addUseDayRestriction.value) {
+                    <div>
+                      <div class="checkbox-matrix">
+                        @for (day of daysOfWeekList; track day) {
+                          <div class="form-check form-check-inline mx-2">
+                            <input
+                              class="bborder form-check-input"
+                              type="checkbox"
+                              [checked]="isDaySelected(day.value)"
+                              (change)="toggleDay(day.value)"
+                              id="add-day-{{day.value}}">
+                            <label class="float-start ms-1" for="add-day-{{day.value}}">
+                              {{day.label}}
+                            </label>
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  }
+                  <div class="form-check mb-2 mt-3">
+                    <input
+                      class="bborder form-check-input"
+                      type="checkbox"
+                      formControlName="addUseDateRestriction"
+                      id="addUseDateRestriction">
+                    <label class="float-start ms-1" for="addUseDateRestriction">
+                      Restrict Date Range
+                    </label>
+                  </div>
+                  @if (addRuleForm.controls.addUseDateRestriction.value) {
+                    <div>
+                      <div class="col-sm-12 design-row-group combinations">
+                        <input class="form-control short-date mx-1" type="date" formControlName="addStartDate">
+                        <span class="center-dash">until</span>
+                        <input class="form-control short-date mx-1" type="date" formControlName="addEndDate">
+                      </div>
+                      @if (addDateRangeInvalid) {
+                        <div class="small text-danger mt-1">
+                          End date must be on or after start date.
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+              @if (!working) {
+                <button class="btn button-go" type="submit" [disabled]="!addRuleForm.valid || addTimeRangeInvalid || addDateRangeInvalid"><i class="fa fa-floppy-o"></i></button>
+              }
+              @if (!working) {
+                <button type="button" class="btn button-stop" (click)="cancelAdding()"><i class="fa fa-times"></i></button>
+              }
+            </form>
+            @if (working) {
+              <i class="fa fa-spinner fa-pulse fa-2x fa-fw"></i>
+            }
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+}

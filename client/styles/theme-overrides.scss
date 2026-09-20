@@ -1,0 +1,41 @@
+// Dark theme customizations - 8% darker than Bootstrap defaults
+[data-bs-theme='dark'] {
+  color-scheme: dark;
+  
+  --bs-body-bg: #0d0f12;
+  --bs-body-color: #e9ecef;
+  --bs-secondary-bg: #1a1e23;
+  --bs-tertiary-bg: #2d3139;
+  --bs-surface-bg: #0d0f12;
+  --bs-form-control-bg: #1a1e23;
+  --bs-form-control-color: #e9ecef;
+  --bs-form-control-border-color: #495057;
+  --bs-border-color: #252626;
+  --bs-border-color-translucent: #252626;
+  --bs-tertiary-bg: black;
+  --bs-card-bg: #1a1e23;
+  --bs-card-border-color: #252626;
+  --bs-card-border-width: 1px;
+  --bs-table-bg: transparent;
+  --bs-table-striped-bg: #161a1f;
+  --bs-table-striped-color: #e9ecef;
+  --bs-table-hover-bg: #1f2328;
+  
+  scrollbar-color: #495057 #0d0f12;
+  
+  &::-webkit-scrollbar-track {
+    background: #0d0f12;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: #495057;
+    
+    &:hover {
+      background: #6c757d;
+    }
+  }
+}
+
+[data-bs-theme="light"] {
+  --bs-border-color-translucent: rgba(0, 0, 0, 0.158);
+}

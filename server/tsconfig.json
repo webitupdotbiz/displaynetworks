@@ -1,0 +1,23 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../dist/server",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "types": ["node", "jest"],
+    "typeRoots": [
+      "../node_modules/@types",
+      "../types"
+    ]
+  },
+  "include": [
+    "**/*",
+    "../types/express.d.ts"
+  ],
+  "exclude": [
+    "**/*.spec.ts",
+    "test-setup.ts"
+  ]
+}

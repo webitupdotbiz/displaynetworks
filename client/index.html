@@ -1,0 +1,38 @@
+<!doctype html>
+<html>
+<head>
+  <title>Display Networks</title>
+  <base href="/">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="Display Networks open source digital signage platform">
+  <meta name="author" content="webitupdotbiz">
+  <meta name="theme-color" content="#FFFFFF"/>
+  <script>
+    (function() {
+      try {
+        var savedTheme = localStorage.getItem('theme');
+        var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var theme = savedTheme === 'dark' || savedTheme === 'light'
+          ? savedTheme
+          : (prefersDark ? 'dark' : 'light');
+
+        document.documentElement.setAttribute('data-bs-theme', theme);
+
+        var themeColorMeta = document.querySelector('meta[name="theme-color"]');
+        if (themeColorMeta) {
+          themeColorMeta.setAttribute('content', theme === 'dark' ? '#0d0f12' : '#FFFFFF');
+        }
+      } catch (e) {
+        document.documentElement.setAttribute('data-bs-theme', 'light');
+      }
+    })();
+  </script>
+  <link rel="icon" type="image/x-icon" href="/_assets/favicon.ico">
+  <link rel="manifest" href="/_assets/manifest.json">
+</head>
+<body>
+  <noscript>Please enable JavaScript to run this application.</noscript>
+  <app-root></app-root>
+</body>
+</html>

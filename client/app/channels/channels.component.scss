@@ -1,0 +1,153 @@
+.table td, .table th {
+   text-align: center;
+}
+.block {
+  width: 100%;
+}
+td.vmid {
+ vertical-align: middle !important;
+ height: 6.66vh;
+}
+td.date-column {
+  min-width: 52px;
+  width: 10%;
+}
+td.button-column {
+  width: 62px;
+  min-width: 62px;
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+}
+.shareLink {
+  font-size: 16px;
+}
+.indicator {
+  width: 100%;
+  height: 38px;
+  padding-top: 6px;
+  cursor: pointer;
+  border: 1px solid black;
+}
+.addpad {
+  padding: 6px 4px 6px 3px  !important;
+}
+
+.butpad {
+  padding: .3em 0 .3em 0 !important;
+}
+.small-date {
+  font-size: 12px;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+td.edit {
+  text-align: left !important;
+}
+.delete-btn {
+  margin-right: 4px !important;
+  padding-right: 15px !important;
+  padding-left: 15px !important;
+}
+.edit-btn {
+  margin-left: 5px !important;
+}
+.control {
+  margin-right: 30px;
+  width: 150px;
+}
+.center {
+  text-align: center;
+}
+.minwidth {
+  min-width: 335px
+}
+.left {
+  text-align: left;
+}
+#info {
+  white-space: pre;
+  line-height:normal;
+  opacity: 1.0;
+}
+
+#search {
+  position: relative;
+  top: 4px;
+  font-size: 22px;
+}
+
+#magnify {
+  position: absolute;
+  top: 5px;
+  left: 14px;
+}
+
+#search #search-clear {
+  text-decoration: none;
+  position: absolute;
+  right: 18px;
+  top: 11px;
+  color: #b3b3b3;
+  cursor: pointer;
+}
+
+#search-input {
+  font-size: 20px;
+}
+
+#search #search-input, #search .hint {
+  padding-left: 43px;
+  padding-right: 43px;
+  border-radius: 23px;
+}
+
+.searchContainer {
+  overflow: hidden;
+  margin-top: 3px;
+}
+
+.addButtonContainer {
+  width: 47px;
+  display: inline;
+  margin-right: 14px;
+  float:left;
+  padding-top: 4px;
+}
+.min-field-width {
+  min-width: 330px;
+}
+.top-space {
+  margin-top:25px;
+}
+.lesspad {
+  padding: 0.75em 0.55em;
+}
+.short-mg {
+  margin-bottom: 4px !important;
+}
+.scontrol {
+  width: 125px;
+}
+.half-mg-bottom {
+  margin-bottom: 0.5rem !important;
+}
+
+.short-pad {
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+}
+.app-tags {
+  width: 100%;
+}
+.button-box {
+  margin-top: 12px;
+}
+
+select {
+  option {
+box-sizing: content-box;
+    font-size: 24px;
+  }
+}
+
+

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
+
+<style>
+html, body {
+    background-color: black;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+iframe {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    border: none;
+    background-color: #000;
+
+    opacity: 0;
+    transition: opacity 1.3s ease;
+    pointer-events: none;
+}
+
+iframe.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.nocursor {
+    cursor: none;
+}
+</style>
+
+<script>
+let currentLocation = "";
+let nextFrame = "iframe-two";
+let expectedFrame = null;
+let init = true;
+let channelName = "";
+let socket = null;
+let reconnectTimer = null;
+let reconnectDelayMs = 1000;
+
+const MAX_RECONNECT_DELAY_MS = 30000;
+const FRAME_LOAD_TIMEOUT_MS = 10000;
+
+function clearFrame(id) {
+    document.getElementById(id).src = "/_view/clear.html";
+}
+
+function crossFade(showFrameId) {
+    const frameOne = document.getElementById("iframe-one");
+    const frameTwo = document.getElementById("iframe-two");
+
+    if (showFrameId === "iframe-one") {
+        frameOne.classList.add("active");
+        frameTwo.classList.remove("active");
+        setTimeout(() => clearFrame("iframe-two"), 1300);
+    } else {
+        frameTwo.classList.add("active");
+        frameOne.classList.remove("active");
+        setTimeout(() => clearFrame("iframe-one"), 1300);
+    }
+}
+
+function iframeLoadHandler(event, frameId) {
+    const src = event.target.src;
+
+    if (!src) return;
+    if (src === window.location.origin + "/_view/clear.html") return;
+
+    // ignore initial load
+    if (init) {
+        init = false;
+        return;
+    }
+
+    // react if expected
+    if (frameId !== expectedFrame) {
+        return;
+    }
+
+    crossFade(frameId);
+    expectedFrame = null;
+}
+
+function getNextFrameName(current) {
+    return current === "iframe-one" ? "iframe-two" : "iframe-one";
+}
+
+function applyChannelUpdate(data) {
+    if (!data || typeof data.value !== "string") {
+        return;
+    }
+
+    if (currentLocation === data.value) {
+        return;
+    }
+
+    currentLocation = data.value;
+
+    const frame = document.getElementById(nextFrame);
+
+    expectedFrame = nextFrame;
+
+    frame.src = data.value;
+
+    setTimeout(() => {
+        if (expectedFrame === frame.id) {
+            console.warn("iframe load timeout, skipping:", frame.id);
+            expectedFrame = null;
+        }
+    }, FRAME_LOAD_TIMEOUT_MS);
+
+    nextFrame = getNextFrameName(nextFrame);
+}
+
+function clearReconnectTimer() {
+    if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+    }
+}
+
+function getNextReconnectDelay() {
+    const jitter = Math.floor(Math.random() * 500);
+    const delay = Math.min(reconnectDelayMs + jitter, MAX_RECONNECT_DELAY_MS);
+    reconnectDelayMs = Math.min(reconnectDelayMs * 2, MAX_RECONNECT_DELAY_MS);
+    return delay;
+}
+
+function scheduleReconnect() {
+    if (reconnectTimer) {
+        return;
+    }
+
+    const delay = getNextReconnectDelay();
+    reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+        connectSocket();
+    }, delay);
+}
+
+function buildSocketUrl(name) {
+    const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+    return `${protocol}://${window.location.host}/_ws/channel/${encodeURIComponent(name)}`;
+}
+
+function connectSocket() {
+    if (!channelName) {
+        return;
+    }
+
+    if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
+        return;
+    }
+
+    const ws = new WebSocket(buildSocketUrl(channelName));
+    socket = ws;
+
+    ws.addEventListener("open", () => {
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+        ws.send(JSON.stringify({
+            type: "display-handshake",
+            timezone
+        }));
+        reconnectDelayMs = 1000;
+        clearReconnectTimer();
+    });
+
+    ws.addEventListener("message", (event) => {
+        try {
+            const payload = JSON.parse(event.data);
+            if (payload && payload.type === "channel-update") {
+                applyChannelUpdate(payload);
+            }
+        } catch (err) {
+            console.error("WebSocket parse error:", err);
+        }
+    });
+
+    ws.addEventListener("error", () => {
+        ws.close();
+    });
+
+    ws.addEventListener("close", () => {
+        if (socket === ws) {
+            socket = null;
+        }
+        scheduleReconnect();
+    });
+}
+
+function getUrlParameters(arr) {
+    if (!arr || arr.length === 0) return {};
+
+    const params = {};
+    for (let i = 0; i < arr.length; ++i) {
+        const p = arr[i].split("=", 2);
+        if (p.length === 1) {
+            params[p[0]] = "";
+        } else {
+            params[p[0]] = decodeURIComponent(p[1].replace(/\+/g, " "));
+        }
+    }
+    return params;
+}
+
+function start() {
+    const iframeOne = document.getElementById("iframe-one");
+    const iframeTwo = document.getElementById("iframe-two");
+
+    iframeOne.addEventListener("load", (e) => iframeLoadHandler(e, "iframe-one"));
+    iframeTwo.addEventListener("load", (e) => iframeLoadHandler(e, "iframe-two"));
+
+    currentLocation = "/_view/loading.html";
+    iframeOne.src = "/_view/loading.html";
+    iframeOne.classList.add("active");
+
+    const params = getUrlParameters(window.location.search.substr(1).split("&"));
+    channelName = params.name || window.location.pathname.split('/').filter(Boolean).pop();
+
+    if (channelName) {
+        connectSocket();
+    }
+}
+
+window.addEventListener("load", start);
+</script>
+</head>
+
+<body class="nocursor">
+<iframe id="iframe-one" scrolling="no" allow="autoplay *; fullscreen *; encrypted-media *"></iframe>
+<iframe id="iframe-two" scrolling="no" allow="autoplay *; fullscreen *; encrypted-media *"></iframe>
+</body>
+</html>

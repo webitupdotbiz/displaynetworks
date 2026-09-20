@@ -1,0 +1,43 @@
+<app-toast [message]="toast.message"></app-toast>
+<nav class="navbar less-space">
+  <app-navbar-brand></app-navbar-brand>
+  @if (showForgotPassword) {
+    <a  (click)="showLogin()" class="nav-item larger-text app-link shorter right-margin navcontrol2 right" routerLinkActive="active">
+      <i class="fa fa-sign-in xmore-space"></i>Login
+    </a>
+  }
+</nav>
+@if (showLoginScreen) {
+  <div class="card">
+    <h4 class="app-header bb">{{ loginMessage }}</h4>
+    <div class="cardblock">
+      <form [formGroup]="loginForm" (ngSubmit)="login()">
+        <div class="input-group" [ngClass]="setClassEmail()">
+          <span class="input-group-prepend"><span class="input-group-text"><i class="fa fa-envelope"></i></span></span>
+          <input #loginEmail class="form-control cht" type="email" name="email" formControlName="email" placeholder="Email" autofocus>
+        </div>
+        <div class="input-group" [ngClass]="setClassPassword()">
+          <span class="input-group-prepend"><span class="input-group-text"><i class="fa fa-key"></i></span></span>
+          <input class="form-control cht" type="password" name="password" formControlName="password" placeholder="Password" autocomplete="new-password">
+        </div>
+        <button class="btn btn-primary" type="submit" [disabled]="!loginForm.valid"><i class="fa fa-sign-in"></i> Login</button>
+        <a class="nav-item app-link forgot" (click)="forgotPassword()">Forgot Password?</a>
+      </form>
+    </div>
+  </div>
+}
+@if (showForgotPassword) {
+  <div class="card">
+    <h4 class="app-header bb">Forgot Password?</h4>
+    <div class="cardblock">
+      <form [formGroup]="forgotFormGroup" (ngSubmit)="forgotForm()">
+        <div class="input-group" [ngClass]="setClassEmail()">
+          <span class="input-group-prepend"><span class="input-group-text"><i class="fa fa-envelope"></i></span></span>
+          <input #forgotEmail class="form-control cht" type="email" name="email" formControlName="email" placeholder="Email" autofocus>
+        </div>
+        <button class="btn btn-primary" type="submit" data-bs-toggle="modal" data-bs-target="#appmodal" [disabled]="!forgotFormGroup.valid"><i class="fa fa-sign-in"></i> Send Reset Password Link</button>
+      </form>
+      <app-info-modal modalId="appmodal" title="Check Your Email" message="If valid, we sent an email to reset your password"></app-info-modal>
+    </div>
+  </div>
+}

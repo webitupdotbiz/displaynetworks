@@ -1,0 +1,234 @@
+/* You can add global styles to this file, and also import other style files */
+
+@use './styles/theme-overrides.scss';
+
+body {
+  font-family: 'Arial', 'sans-serif';
+  margin: 0px;
+  z-index: 1;
+  height: 100%;
+}
+
+.app-btn {
+  font-size: 24px;
+  margin-left: 3px;
+  margin-right: 3px;
+  width: 52px;
+  height: 50px;
+}
+
+.modtable {
+  min-height: 71px;
+  margin-bottom: 0 !important;
+}
+
+.btn:disabled {
+  opacity: 0.2 !important;
+}
+
+.input-group {
+  margin-bottom: 15px;
+}
+
+.app-container {
+  margin: 0 3px 0 3px;
+}
+
+@media (min-width: 1200px) {
+  .app-container {
+    max-width: 80vw;
+    margin: 0 auto;
+  }
+}
+
+.content-box {
+  margin-bottom: 0 !important;
+}
+
+.app-link {
+  border: 0;
+  font-size: 20px;
+  color: #0275d8 !important;
+  text-decoration: none;
+}
+.app-link:hover {
+  cursor: pointer;
+  text-decoration: none;
+}
+.input-group-text {
+  padding: 12px 12px;
+  border-radius: 0;
+}
+.larger-text {
+  font-size: 20px;
+}
+.largest-text {
+  font-size: 24px;
+}
+.cht {
+  height: 42px;
+}
+.taller {
+  padding-top: 11px;
+  padding-bottom: 11px;
+  padding-left: 16px;
+}
+.shorter {
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+.xxmore-space {
+  margin-right: 9px;
+}
+.xmore-space {
+  margin-right: 7px;
+}
+.less-space {
+  padding: 5px 5px 5px 8px;
+}
+.navbar {
+  height: 50px;
+}
+.navbar-brand {
+  padding-left: 7px;
+  letter-spacing: 1px;
+  text-decoration: none;
+}
+
+.emailBox {
+   display: none;
+   @media (min-width: 600px) {
+     display: inline;
+   }
+}
+.custom-size {
+  font-size: 16px;
+}
+.navcontrol {
+  margin-top: 4px;
+}
+.navcontrol2 {
+  margin-top: 2px;
+}
+.right-margin {
+  margin-right: 26px;
+}
+.htext {
+  position: relative;
+  top: 12px;
+}
+.right {
+  float: right;
+}
+.fillspace {
+  width: 182px;
+}
+.cardblock {
+  padding: 1.25rem;
+}
+
+.cardnobb {
+  border-bottom: 0px solid transparent;
+}
+
+.button-go:hover {
+  color: #026102 !important;
+  border: 1px solid #026102;
+}
+.button-go {
+  width: 66px;
+  padding: 6px 21px;
+  color: #026102;
+  border-color: #026102;
+  margin-right: 5px;
+  font-size: 24px !important;
+}
+.button-stop:hover {
+  color: #b50707 !important;
+  border: 1px solid #b50707;
+}
+.button-stop {
+  width: 66px;
+  padding: 6px 21px;
+  color: #b50707;
+  border-color: #b50707;
+  margin-left: 5px;
+  font-size: 24px !important;
+}
+.float-right {
+  float: right !important;
+}
+@media (min-width: 1100px) {
+  .col-sm-1-custom {
+    flex: 0 0 8.333333%;
+    max-width: 8.333333%;
+  }
+}
+.form-group {
+  margin-bottom: 3px;
+}
+.form-control {
+  margin-bottom: 12px;
+}
+.app-header {
+  padding: .6rem .4rem .6rem 1.25rem;
+  margin-bottom: 0;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+.bb {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid -var(--bs-border-color);
+}
+
+.app-header {
+  border-bottom: 0;
+}
+
+.orange,
+.orange:hover {
+  color: orange;
+  border: 1px solid orange;
+}
+
+.red,
+.red:hover {
+  color: red;
+  border: 1px solid red;
+}
+
+.green,
+.green:hover {
+  color: green;
+  border: 1px solid green;
+}
+
+.bborder {
+  border: 1px solid var(--bs-secondary-color, #6c757d) !important;
+}
+
+.nrb {
+  border-right-width: 0 !important;
+}
+.nlb {
+  border-left-width: 0 !important;
+}
+
+.tag:hover {
+  background-color: color-mix(in srgb, currentColor 10%, transparent);
+}
+.tag {
+  display: inline-block;
+  font-size: 16px;
+  font-weight: bold;
+  margin: 2px 2px 4px 2px;
+  padding: 5px 14px;
+  border-radius: 25px;
+  border: 1px solid;
+}
+.tag-x {
+  cursor: pointer;
+}
+
+
