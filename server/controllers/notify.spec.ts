@@ -1,5 +1,6 @@
 import { jest, describe, it, expect, beforeEach } from '@jest/globals';
 import { Request, Response } from 'express';
+import type NotifyCtrlClass from './notify.js';
 
 const mockSendEmail = jest.fn();
 
@@ -20,12 +21,12 @@ const createResponse = (): MockResponse => ({
   json: jest.fn().mockReturnThis()
 } as unknown as MockResponse);
 
-const createRequest = (body: any = {}) => ({
+const createRequest = (body: Record<string, unknown> = {}) => ({
   body
 } as unknown as Request);
 
 describe('NotifyCtrl', () => {
-  let controller: NotifyCtrl;
+  let controller: NotifyCtrlClass;
 
   beforeEach(() => {
     controller = new NotifyCtrl();

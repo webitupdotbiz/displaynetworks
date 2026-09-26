@@ -5,7 +5,7 @@ export interface IUser extends Document {
   _id: Types.ObjectId;
   id: string;
   email: string;
-  password: string;
+  password?: string;
   role: string;
   resetPasswordToken?: string;
   resetPasswordExpires?: number;
@@ -50,8 +50,8 @@ userSchema.methods.comparePassword = async function (candidatePassword: string):
 };
 
 userSchema.set('toJSON', {
-  transform: function (_doc, ret: Record<string, any>) {
-    delete ret['password'];
+  transform: (_doc, ret) => {
+    delete ret.password;
     return ret;
   }
 });

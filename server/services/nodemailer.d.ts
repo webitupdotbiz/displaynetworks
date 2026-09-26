@@ -1,9 +1,18 @@
 declare module 'nodemailer' {
-  interface Transporter {
-    sendMail(mailOptions: Record<string, unknown>): Promise<any>;
+  interface SentMessageInfo {
+    messageId?: string;
+    accepted?: string[];
+    rejected?: string[];
+    pending?: string[];
+    response?: string;
+    envelope?: Record<string, unknown>;
   }
 
-  function createTransport(options: any): Transporter;
+  interface Transporter {
+    sendMail(mailOptions: Record<string, unknown>): Promise<SentMessageInfo>;
+  }
+
+  function createTransport(options: Record<string, unknown>): Transporter;
 
   const nodemailer: {
     createTransport: typeof createTransport;

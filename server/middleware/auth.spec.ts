@@ -1,6 +1,8 @@
 import { jest, describe, it, expect, beforeEach } from '@jest/globals';
+import { Request, Response, NextFunction } from 'express';
+import type { MockFn } from '../types/test.js';
 
-const mockVerifyJwt = jest.fn();
+const mockVerifyJwt = jest.fn() as unknown as MockFn<(token: string, secret: string) => Promise<unknown>>;
 const mockGetJwtSecret = jest.fn().mockReturnValue('test-secret');
 
 jest.unstable_mockModule('./utils/jwt.js', () => ({
@@ -11,22 +13,35 @@ jest.unstable_mockModule('./utils/jwt.js', () => ({
 
 const { authMiddleware } = await import('./auth.js');
 
+type MockResponse = Response & {
+  status: MockFn<(code: number) => MockResponse>;
+  json: MockFn<(data: unknown) => MockResponse>;
+};
+
 describe('authMiddleware', () => {
-  let req: any;
-  let res: any;
-  let next: jest.Mock;
+  let req: Request;
+  let res: MockResponse;
+  let next: MockFn<NextFunction>;
 
   beforeEach(() => {
-    req = { body: {}, query: {}, headers: {} };
+    jest.clearAllMocks();
+
+    req = {
+      body: {},
+      query: {},
+      headers: {}
+    } as Request;
+
     res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis()
-    };
-    next = jest.fn();
+      status: (jest.fn() as unknown as MockFn<(code: number) => MockResponse>).mockReturnThis(),
+      json: (jest.fn() as unknown as MockFn<(data: unknown) => MockResponse>).mockReturnThis()
+    } as unknown as MockResponse;
+
+    next = jest.fn() as unknown as MockFn<NextFunction>;
   });
 
   it('returns 403 when no token is provided', async () => {
-    await authMiddleware(req, res, next);
+    await authMiddleware(req, res, next as unknown as NextFunction);
 
     expect(res.status).toHaveBeenCalledWith(403);
     expect(res.json).toHaveBeenCalledWith({
@@ -42,9 +57,9 @@ describe('authMiddleware', () => {
     });
     req.headers['x-access-token'] = 'valid-token';
 
-    await authMiddleware(req, res, next);
+    await authMiddleware(req, res, next as unknown as NextFunction);
 
-    expect(req.user).toEqual({ id: 'abc', role: 'user' });
+    expect((req as Request & { user: unknown }).user).toEqual({ id: 'abc', role: 'user' });
     expect(next).toHaveBeenCalled();
     expect(res.status).not.toHaveBeenCalled();
   });
@@ -53,7 +68,7 @@ describe('authMiddleware', () => {
     mockVerifyJwt.mockRejectedValue(new Error('invalid token'));
     req.headers['x-access-token'] = 'invalid-token';
 
-    await authMiddleware(req, res, next);
+    await authMiddleware(req, res, next as unknown as NextFunction);
 
     expect(res.status).toHaveBeenCalledWith(403);
     expect(res.json).toHaveBeenCalledWith({

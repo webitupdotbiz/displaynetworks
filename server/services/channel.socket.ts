@@ -467,7 +467,7 @@ export class ChannelSocketHub {
       workingChannel.matchedRuleName = '';
     }
 
-    const { owner, ...publicChannel } = workingChannel;
+    const { ...publicChannel } = workingChannel;
     return {
       ownerId,
       publicChannel: { ...publicChannel, owner: '' }

@@ -1,10 +1,28 @@
 import { Request, Response } from 'express';
 import BaseCtrl from './base.js';
 
-class TestCtrl extends BaseCtrl<any> {
+interface TestModelDocument {
+  _id?: string;
+  name?: string;
+  save?: jest.Mock;
+}
+
+type ModelMethods = {
+  find: jest.Mock;
+  countDocuments: jest.Mock;
+  findOne: jest.Mock;
+  findOneAndUpdate: jest.Mock;
+  findOneAndDelete: jest.Mock;
+  deleteMany: jest.Mock;
+};
+
+type TestModelMock = jest.Mock & ModelMethods;
+
+class TestCtrl extends BaseCtrl<TestModelDocument> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   model: any;
 
-  constructor(model: any) {
+  constructor(model: TestModelMock) {
     super();
     this.model = model;
   }
@@ -24,16 +42,16 @@ const createResponse = (): MockResponse => {
 };
 
 const createRequest = (params: Record<string, unknown> = {}, body: Record<string, unknown> = {}) => {
-  return { params, body } as Request;
+  return { params, body } as unknown as Request;
 };
 
 describe('BaseCtrl', () => {
   let modelConstructor: jest.Mock;
-  let model: any;
+  let model: ModelMethods;
   let controller: TestCtrl;
 
   beforeEach(() => {
-    modelConstructor = jest.fn().mockImplementation((body) => ({
+    modelConstructor = jest.fn().mockImplementation((body: Record<string, unknown>) => ({
       ...body,
       save: jest.fn().mockResolvedValue({ _id: 'saved-id', ...body })
     }));
@@ -48,7 +66,7 @@ describe('BaseCtrl', () => {
     };
 
     Object.assign(modelConstructor, model);
-    controller = new TestCtrl(modelConstructor);
+    controller = new TestCtrl(modelConstructor as unknown as TestModelMock);
   });
 
   it('getAll returns 200 with documents', async () => {

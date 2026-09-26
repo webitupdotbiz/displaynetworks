@@ -1,6 +1,6 @@
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import BaseCtrl from './base.js';
-import Rule, { IRuleDoc, RuleScheduleType } from '../models/rule.js';
+import Rule, { type IRuleDoc, type RuleScheduleType } from '../models/rule.js';
 import Channel from '../models/channel.js';  
 import { rulesCache } from '../services/store.cache.js';     
 import { notifyOwnerChanged } from '../services/channel.socket.js';
@@ -60,7 +60,7 @@ export default class RuleCtrl extends BaseCtrl<IRuleDoc> {
   private sanitizePayload(body: unknown): Record<string, unknown> {
     const input = requireBodyObject(body);
     for (const field of [
-      'name', 'overrideUrl', 'matchStrategy', 'search', 'scheduleType', 'owner', 'notes'
+      'name', 'overrideUrl', 'matchStrategy', 'search', 'scheduleType', 'timezone', 'owner', 'notes'
     ]) {
       validateOptionalString(input, field);
     }
@@ -79,14 +79,14 @@ export default class RuleCtrl extends BaseCtrl<IRuleDoc> {
     ]);
   }
 
-  getOrderedRules = async (req: Request, res: Response) => {
+  getOrderedRules = async (req: Request, res: Response): Promise<Response> => {
     try {
       res.header('Cache-Control', 'private, no-cache, no-store, must-revalidate');
       res.header('Expires', '-1');
       res.header('Pragma', 'no-cache');
 
-      let params = <any>{};
-      let result = <any>{};
+      const params: Record<string, unknown> = {};
+      const result: { count?: number; rules?: IRuleDoc[] } = {};
       
       const ownerScope = this.getOwnerScope(req);
       if (ownerScope && req.params.id && req.params.id !== ownerScope) {
@@ -95,7 +95,7 @@ export default class RuleCtrl extends BaseCtrl<IRuleDoc> {
       if (ownerScope) params.owner = ownerScope;
       else if (req.params.id) params.owner = req.params.id;
 
-      const searchRegex = createSearchRegex(req.query.term);
+      const searchRegex = createSearchRegex(req.query.term as string | undefined);
       if (searchRegex) params.search = searchRegex;
 
       const count = await this.model.countDocuments(params);
@@ -103,7 +103,7 @@ export default class RuleCtrl extends BaseCtrl<IRuleDoc> {
 
       if (req.params.last) {
         const lastPriority = Number(req.params.last);
-        if (!isNaN(lastPriority)) {
+        if (!Number.isNaN(lastPriority)) {
           params.priority = { $gt: lastPriority }; 
         }
       }
@@ -115,7 +115,7 @@ export default class RuleCtrl extends BaseCtrl<IRuleDoc> {
       result.rules = docs;
       return res.status(200).json(result);
     } catch (err) {
-      const error = err instanceof Error ? err.message : "An unknown error occurred";
+      const error = err instanceof Error ? err.message : 'An unknown error occurred';
       return res.status(400).json({ error });
     }
   };
@@ -137,7 +137,7 @@ export default class RuleCtrl extends BaseCtrl<IRuleDoc> {
     }
   };
 
-  override count = async (req: Request, res: Response) => {
+  override count = async (req: Request, res: Response): Promise<Response> => {
     res.header('Cache-Control', 'private, no-cache, no-store, must-revalidate');
     res.header('Expires', '-1');
     res.header('Pragma', 'no-cache');
@@ -146,19 +146,19 @@ export default class RuleCtrl extends BaseCtrl<IRuleDoc> {
       if (ownerScope && req.params.id && req.params.id !== ownerScope) {
         return res.status(403).json({ error: 'Forbidden' });
       }
-      let params = {};
+      let params: Record<string, unknown> = {};
       if (ownerScope) params = { owner: ownerScope };
       else if (req.params.id) params = { owner: req.params.id };
       
       const count = await this.model.countDocuments(params);
       return res.status(200).json(count);
     } catch (err) {
-      const error = err instanceof Error ? err.message : "An unknown error occurred";
+      const error = err instanceof Error ? err.message : 'An unknown error occurred';
       return res.status(400).json({ error });
     }
   };
 
-  override insert = async (req: Request, res: Response) => {
+  override insert = async (req: Request, res: Response): Promise<Response> => {
     try {
       const ruleData = this.sanitizePayload(req.body);
       const ownerScope = this.getOwnerScope(req);
@@ -188,12 +188,12 @@ export default class RuleCtrl extends BaseCtrl<IRuleDoc> {
       await notifyOwnerChanged(obj.owner);
       return res.status(201).json(obj);
     } catch (err) {
-      const error = err instanceof Error ? err.message : "An unknown error occurred";
+      const error = err instanceof Error ? err.message : 'An unknown error occurred';
       return res.status(400).json({ error });
     }
   };
 
-  override update = async (req: Request, res: Response) => {
+  override update = async (req: Request, res: Response): Promise<Response> => {
     try {
       const ruleId = typeof req.params.ruleId === 'string' ? req.params.ruleId : req.params.id;
       const updatePayload = this.sanitizePayload(req.body);
@@ -224,16 +224,16 @@ export default class RuleCtrl extends BaseCtrl<IRuleDoc> {
         ? await this.model.findOne({ _id: ruleId, owner: ownerScope })
         : await this.model.findById(ruleId);
       if (!existingRule) {
-        return res.status(404).json({ error: "Rule not found." });
+        return res.status(404).json({ error: 'Rule not found.' });
       }
 
       await this.model.findOneAndUpdate(ownerScope ? { _id: ruleId, owner: ownerScope } : { _id: ruleId }, updatePayload);
       const ownerId = typeof updatePayload.owner === 'string' ? updatePayload.owner : existingRule.owner;
       rulesCache.invalidate(ownerId);
       await notifyOwnerChanged(ownerId);
-      return res.status(200).json({ message: "OK" });
+      return res.status(200).json({ message: 'OK' });
     } catch (err) {
-      const error = err instanceof Error ? err.message : "An unknown error occurred";
+      const error = err instanceof Error ? err.message : 'An unknown error occurred';
       return res.status(400).json({ error });
     }
   };
@@ -250,28 +250,28 @@ export default class RuleCtrl extends BaseCtrl<IRuleDoc> {
         : await this.model.findById(ruleId);
       
       if (!ruleToDelete) {
-        return res.status(404).json({ error: "Rule not found." });
+        return res.status(404).json({ error: 'Rule not found.' });
       }
 
       await this.model.findOneAndDelete(ownerScope ? { _id: ruleId, owner: ownerScope } : { _id: ruleId });
       rulesCache.invalidate(ruleToDelete.owner);
       await notifyOwnerChanged(ruleToDelete.owner);
       
-      return res.status(200).json({ message: "OK" });
+      return res.status(200).json({ message: 'OK' });
     } catch (err) {
-      const error = err instanceof Error ? err.message : "An unknown error occurred";
+      const error = err instanceof Error ? err.message : 'An unknown error occurred';
       return res.status(400).json({ error });
     }
   };
 
-  swapPriority = async (req: Request, res: Response) => {
+  swapPriority = async (req: Request, res: Response): Promise<Response> => {
     try {
       const body = requireBodyObject(req.body);
       const { ruleIdA, ruleIdB, ownerId } = body;
 
       if (typeof ruleIdA !== 'string' || typeof ruleIdB !== 'string' || typeof ownerId !== 'string' ||
           !ruleIdA || !ruleIdB || !ownerId) {
-        return res.status(400).json({ error: "Missing swap transaction variables." });
+        return res.status(400).json({ error: 'Missing swap transaction variables.' });
       }
       if (!this.hasOwnerAccess(req, ownerId)) {
         return res.status(403).json({ error: 'Forbidden' });
@@ -283,7 +283,7 @@ export default class RuleCtrl extends BaseCtrl<IRuleDoc> {
       ]);
 
       if (!ruleA || !ruleB) {
-        return res.status(404).json({ error: "Rules not found or scope mismatched." });
+        return res.status(404).json({ error: 'Rules not found or scope mismatched.' });
       }
 
       const tempPriority = ruleA.priority;
@@ -293,14 +293,14 @@ export default class RuleCtrl extends BaseCtrl<IRuleDoc> {
       await Promise.all([ruleA.save(), ruleB.save()]);
       rulesCache.invalidate(ruleA.owner);
       await notifyOwnerChanged(ruleA.owner);
-      return res.status(200).json({ message: "OK" });
+      return res.status(200).json({ message: 'OK' });
     } catch (err) {
-      const error = err instanceof Error ? err.message : "An unknown error occurred";
+      const error = err instanceof Error ? err.message : 'An unknown error occurred';
       return res.status(400).json({ error });
     }
   };
 
-  getDropdownTags = async (req: Request, res: Response) => {
+  getDropdownTags = async (req: Request, res: Response): Promise<Response> => {
     try {
       res.header('Cache-Control', 'private, no-cache, no-store, must-revalidate');
       res.header('Expires', '-1');
@@ -322,7 +322,7 @@ export default class RuleCtrl extends BaseCtrl<IRuleDoc> {
         channels,
       });
     } catch (err) {
-      const error = err instanceof Error ? err.message : "An unknown error occurred";
+      const error = err instanceof Error ? err.message : 'An unknown error occurred';
       return res.status(400).json({ error });
     }
   };

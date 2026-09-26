@@ -31,6 +31,8 @@
   },
   "references": [
     { "path": "./client/tsconfig.app.json" },
-    { "path": "./client/tsconfig.spec.json" }
+    { "path": "./client/tsconfig.spec.json" },
+    { "path": "./server/tsconfig.json" },
+    { "path": "./server/tsconfig.spec.json" }
   ]
 }

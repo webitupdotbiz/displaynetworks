@@ -1,4 +1,4 @@
-import express, { Application, Request, Response } from 'express';
+import express, { Application } from 'express';
 import rateLimit from 'express-rate-limit';
 import { authMiddleware } from './middleware/auth.js';
 

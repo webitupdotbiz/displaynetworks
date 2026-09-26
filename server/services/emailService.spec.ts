@@ -1,7 +1,16 @@
 import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import type { MockFn } from '../types/test.js';
 
-const mockSendMail = jest.fn();
-const mockCreateTransport = jest.fn();
+interface MockTransporter {
+  sendMail: MockFn<(mailOptions: Record<string, unknown>) => Promise<unknown>>;
+}
+
+interface MockNodemailer {
+  createTransport: MockFn<(config: Record<string, unknown>) => MockTransporter>;
+}
+
+const mockSendMail = jest.fn() as unknown as MockFn<(mailOptions: Record<string, unknown>) => Promise<unknown>>;
+const mockCreateTransport = jest.fn() as unknown as MockFn<(config: Record<string, unknown>) => MockTransporter>;
 
 jest.unstable_mockModule('nodemailer', () => ({
   __esModule: true,
@@ -11,7 +20,7 @@ jest.unstable_mockModule('nodemailer', () => ({
   createTransport: mockCreateTransport
 }));
 
-const nodemailer = (await import('nodemailer')).default;
+const nodemailer = (await import('nodemailer' as string)) as unknown as { default: MockNodemailer };
 const { default: sendEmail } = await import('./emailService.js');
 
 describe('server/services/emailService', () => {
@@ -44,7 +53,7 @@ describe('server/services/emailService', () => {
     jest.runAllImmediates();
     await Promise.resolve();
 
-    expect(nodemailer.createTransport).toHaveBeenCalledWith({
+    expect(nodemailer.default.createTransport).toHaveBeenCalledWith({
       host: 'smtp.example.com',
       port: '465',
       secure: true,

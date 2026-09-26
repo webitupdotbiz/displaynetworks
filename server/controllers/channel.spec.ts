@@ -1,7 +1,13 @@
 import { jest, describe, it, expect, beforeEach } from '@jest/globals';
 import { Request, Response } from 'express';
+import type { IChannel } from '../models/channel.js';
+import type { IRule } from '../models/rule.js';
+import type { MockFn } from '../types/test.js';
 
-const notifyChannelChangedMock = jest.fn<(...args: unknown[]) => Promise<void>>().mockResolvedValue(undefined);
+type ChannelDoc = Partial<IChannel> & { _id?: string };
+
+const notifyChannelChangedMock = jest.fn() as unknown as MockFn<(...args: unknown[]) => Promise<void>>;
+notifyChannelChangedMock.mockResolvedValue(undefined);
 
 jest.unstable_mockModule('../services/channel.socket.js', () => ({
   __esModule: true,
@@ -13,18 +19,46 @@ const { RuleEngine } = await import('../services/rule.engine.js');
 const { channelCache, rulesCache } = await import('../services/store.cache.js');
 
 type MockResponse = Response & {
-  status: jest.Mock;
-  json: jest.Mock;
-  header: jest.Mock;
+  status: MockFn<(code: number) => MockResponse>;
+  json: MockFn<(data: unknown) => MockResponse>;
+  header: MockFn<(name: string, value: string) => MockResponse>;
 };
 
+interface MockModel {
+  (body: ChannelDoc): {
+    save: MockFn<() => Promise<ChannelDoc>>;
+  };
+  countDocuments: MockFn<(params: Record<string, unknown>) => Promise<number>>;
+  find: MockFn<(params: Record<string, unknown>) => {
+    limit: MockFn<(n: number) => {
+      sort: MockFn<(criterion: Record<string, number>) => Promise<ChannelDoc[]>>;
+    }>;
+  }>;
+  findOne: MockFn<(params: Record<string, unknown>) => Promise<ChannelDoc | null>>;
+  findOneAndUpdate: MockFn<(params: Record<string, unknown>, payload: Record<string, unknown>) => Promise<ChannelDoc | null>>;
+  findOneAndDelete: MockFn<(params: Record<string, unknown>) => Promise<ChannelDoc | null>>;
+  deleteMany: MockFn<(params: Record<string, unknown>) => Promise<unknown>>;
+}
+
+interface MockRuleModel {
+  find: MockFn<(params: Record<string, unknown>) => {
+    sort: MockFn<(criterion: Record<string, number>) => {
+      lean: MockFn<() => Promise<IRule[]>>;
+    }>;
+  }>;
+}
+
 const createResponse = (): MockResponse => ({
-  status: jest.fn().mockReturnThis(),
-  json: jest.fn().mockReturnThis(),
-  header: jest.fn().mockReturnThis()
+  status: (jest.fn() as unknown as MockFn<(code: number) => MockResponse>).mockReturnThis(),
+  json: (jest.fn() as unknown as MockFn<(data: unknown) => MockResponse>).mockReturnThis(),
+  header: (jest.fn() as unknown as MockFn<(name: string, value: string) => MockResponse>).mockReturnThis()
 } as unknown as MockResponse);
 
-const createRequest = (query: any = {}, params: any = {}, body: any = {}) => ({
+const createRequest = (
+  query: Record<string, unknown> = {},
+  params: Record<string, unknown> = {},
+  body: Record<string, unknown> = {}
+): Request => ({
   query,
   params,
   body,
@@ -32,44 +66,74 @@ const createRequest = (query: any = {}, params: any = {}, body: any = {}) => ({
 } as unknown as Request);
 
 describe('ChannelCtrl', () => {
-  let controller: ChannelCtrl;
-  let model: any;
-  let constructorFn: jest.Mock;
-  let ruleModel: any;
+  let controller: InstanceType<typeof ChannelCtrl>;
+  let model: MockModel;
+  let constructorFn: MockFn<(body: ChannelDoc) => { save: MockFn<() => Promise<ChannelDoc>> }>;
+  let ruleModel: MockRuleModel;
 
   beforeEach(() => {
     notifyChannelChangedMock.mockClear();
     channelCache.clearAll();
     rulesCache.clearAll();
 
-    constructorFn = jest.fn().mockImplementation((body) => ({
+    const saveFn = jest.fn() as unknown as MockFn<() => Promise<ChannelDoc>>;
+    saveFn.mockResolvedValue({ _id: 'saved-id' });
+
+    constructorFn = jest.fn() as unknown as MockFn<(body: ChannelDoc) => { save: MockFn<() => Promise<ChannelDoc>> }>;
+    constructorFn.mockImplementation((body: ChannelDoc) => ({
       ...body,
-      save: jest.fn().mockResolvedValue({ _id: 'saved-id', ...body })
+      save: (jest.fn() as unknown as MockFn<() => Promise<ChannelDoc>>).mockResolvedValue({ _id: 'saved-id', ...body })
     }));
 
+    const countDocumentsFn = jest.fn() as unknown as MockFn<(params: Record<string, unknown>) => Promise<number>>;
+    countDocumentsFn.mockResolvedValue(1);
+
+    const sortFn = jest.fn() as unknown as MockFn<(criterion: Record<string, number>) => Promise<ChannelDoc[]>>;
+    sortFn.mockResolvedValue([{ _id: '1', value: 'x' }]);
+
+    const limitFn = jest.fn() as unknown as MockFn<(n: number) => { sort: typeof sortFn }>;
+    limitFn.mockReturnValue({ sort: sortFn });
+
+    const findFn = jest.fn() as unknown as MockFn<(params: Record<string, unknown>) => { limit: typeof limitFn }>;
+    findFn.mockReturnValue({ limit: limitFn });
+
+    const findOneFn = jest.fn() as unknown as MockFn<(params: Record<string, unknown>) => Promise<ChannelDoc | null>>;
+    findOneFn.mockResolvedValue({ _id: '1', owner: 'owner' });
+
+    const findOneAndUpdateFn = jest.fn() as unknown as MockFn<(params: Record<string, unknown>, payload: Record<string, unknown>) => Promise<ChannelDoc | null>>;
+    findOneAndUpdateFn.mockResolvedValue({});
+
+    const findOneAndDeleteFn = jest.fn() as unknown as MockFn<(params: Record<string, unknown>) => Promise<ChannelDoc | null>>;
+    findOneAndDeleteFn.mockResolvedValue(null);
+
+    const deleteManyFn = jest.fn() as unknown as MockFn<(params: Record<string, unknown>) => Promise<unknown>>;
+    deleteManyFn.mockResolvedValue({});
+
     model = Object.assign(constructorFn, {
-      countDocuments: jest.fn().mockResolvedValue(1),
-      find: jest.fn().mockReturnValue({
-        limit: jest.fn().mockReturnThis(),
-        sort: jest.fn().mockResolvedValue([{ _id: '1', value: 'x' }])
-      }),
-      findOne: jest.fn().mockResolvedValue({ _id: '1', owner: 'owner' }),
-      findOneAndUpdate: jest.fn().mockResolvedValue({}),
-      findOneAndDelete: jest.fn().mockResolvedValue(null),
-      deleteMany: jest.fn().mockResolvedValue({})
+      countDocuments: countDocumentsFn,
+      find: findFn,
+      findOne: findOneFn,
+      findOneAndUpdate: findOneAndUpdateFn,
+      findOneAndDelete: findOneAndDeleteFn,
+      deleteMany: deleteManyFn
     });
 
+    const leanFn = jest.fn() as unknown as MockFn<() => Promise<IRule[]>>;
+    leanFn.mockResolvedValue([]);
+
+    const ruleSortFn = jest.fn() as unknown as MockFn<(criterion: Record<string, number>) => { lean: typeof leanFn }>;
+    ruleSortFn.mockReturnValue({ lean: leanFn });
+
+    const ruleFindFn = jest.fn() as unknown as MockFn<(params: Record<string, unknown>) => { sort: typeof ruleSortFn }>;
+    ruleFindFn.mockReturnValue({ sort: ruleSortFn });
+
     ruleModel = {
-      find: jest.fn().mockReturnValue({
-        sort: jest.fn().mockReturnValue({
-          lean: jest.fn().mockResolvedValue([])
-        })
-      })
+      find: ruleFindFn
     };
 
     controller = new ChannelCtrl();
-    controller.model = model;
-    controller.ruleModel = ruleModel;
+    controller.model = model as unknown as typeof controller.model;
+    controller.ruleModel = ruleModel as unknown as typeof controller.ruleModel;
   });
 
   it('getAll returns results and sets no-cache headers', async () => {
@@ -145,7 +209,9 @@ describe('ChannelCtrl', () => {
   });
 
   it('insert returns 400 on save error', async () => {
-    constructorFn.mockImplementationOnce(() => ({ save: jest.fn().mockRejectedValueOnce(new Error('save failed')) }));
+    constructorFn.mockImplementationOnce(() => ({
+      save: (jest.fn() as unknown as MockFn<() => Promise<ChannelDoc>>).mockRejectedValueOnce(new Error('save failed'))
+    }));
     const req = createRequest({}, {}, { value: 'https://youtu.be/abc123' });
     const res = createResponse();
 
@@ -296,8 +362,8 @@ describe('ChannelCtrl', () => {
 
   it('fetchChannelByName returns plain object when found', async () => {
     model.findOne.mockResolvedValueOnce({
-      toObject: jest.fn().mockReturnValue({ name: 'abc' })
-    });
+      toObject: (jest.fn() as unknown as MockFn<() => ChannelDoc>).mockReturnValue({ name: 'abc' })
+    } as unknown as ChannelDoc);
 
     const out = await controller.fetchChannelByName('abc');
 
@@ -329,7 +395,7 @@ describe('ChannelCtrl', () => {
       tags: [],
       priority: 0,
       isActive: true
-    } as any);
+    } as unknown as IRule);
 
     const out = controller.evaluateAndApplyRules({
       name: 'demo',
@@ -339,12 +405,12 @@ describe('ChannelCtrl', () => {
       search: 'demo',
       matchedRuleName: '',
       tags: []
-    } as any, []);
+    } as unknown as IChannel, []);
 
     expect(findSpy).toHaveBeenCalled();
-    expect((out as any).owner).toBe('');
+    expect((out as ChannelDoc).owner).toBe('');
     expect(out.value).toBe('https://override.example');
-    expect((out as any).matchedRuleName).toBe('Rule A');
+    expect((out as { matchedRuleName?: string }).matchedRuleName).toBe('Rule A');
   });
 
   it('getByNameApplyRules returns 500 for invalid channel name', async () => {
@@ -378,7 +444,7 @@ describe('ChannelCtrl', () => {
       search: 'news',
       matchedRuleName: '',
       tags: ['tag-a']
-    } as any);
+    } as unknown as IChannel);
 
     const fetchRulesSpy = jest.spyOn(controller, 'fetchActiveRulesForOwner').mockResolvedValueOnce([
       {
@@ -389,7 +455,7 @@ describe('ChannelCtrl', () => {
         tags: ['tag-a'],
         priority: 0,
         isActive: true
-      } as any
+      } as unknown as IRule
     ]);
 
     const applySpy = jest.spyOn(controller, 'evaluateAndApplyRules').mockReturnValue({
@@ -400,7 +466,7 @@ describe('ChannelCtrl', () => {
       search: 'news',
       matchedRuleName: 'Rule 1',
       tags: ['tag-a']
-    } as any);
+    } as unknown as Omit<IChannel, 'owner'>);
 
     const req = createRequest({}, { name: 'news' });
     const res = createResponse();
@@ -425,8 +491,8 @@ describe('ChannelCtrl', () => {
       search: 'cached',
       matchedRuleName: '',
       tags: []
-    } as any);
-    rulesCache.set('owner-c', [] as any);
+    } as unknown as IChannel);
+    rulesCache.set('owner-c', []);
 
     const fetchChannelSpy = jest.spyOn(controller, 'fetchChannelByName');
     const fetchRulesSpy = jest.spyOn(controller, 'fetchActiveRulesForOwner');

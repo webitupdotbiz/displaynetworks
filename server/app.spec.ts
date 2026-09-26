@@ -69,7 +69,8 @@ describe('server app', () => {
     await main();
 
     expect(mockConnectToMongo).toHaveBeenCalledTimes(1);
-    expect(createServerSpy).toHaveBeenCalledWith(app as any);
+    expect(createServerSpy).toHaveBeenCalledWith(expect.any(Function));
+    expect(createServerSpy.mock.calls[0][0]).toBe(app);
     expect(mockStartChannelSocketServer).toHaveBeenCalledWith(fakeServer);
     expect(mockListen).toHaveBeenCalledWith(app.get('port'), expect.any(Function));
     expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('Display Networks listening on port'));
