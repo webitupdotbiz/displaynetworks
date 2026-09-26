@@ -8,15 +8,13 @@
   "overrides": [
     {
       "files": [
-        "*.ts"
+        "client/**/*.ts"
       ],
       "parserOptions": {
         "project": [
           "client/tsconfig.app.json",
-          "client/tsconfig.spec.json",
-          "server/tsconfig.json"
-        ],
-        "createDefaultProgram": true
+          "client/tsconfig.spec.json"
+        ]
       },
       "extends": [
         "plugin:@angular-eslint/recommended",
@@ -37,6 +35,30 @@
             "prefix": "app",
             "style": "camelCase",
             "type": "attribute"
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "server/**/*.ts"
+      ],
+      "parserOptions": {
+        "project": [
+          "server/tsconfig.json",
+          "server/tsconfig.spec.json"
+        ]
+      },
+      "extends": [
+        "plugin:@typescript-eslint/recommended"
+      ],
+      "rules": {
+        "@typescript-eslint/no-unused-vars": [
+          "error",
+          {
+            "argsIgnorePattern": "^_",
+            "varsIgnorePattern": "^_",
+            "caughtErrorsIgnorePattern": "^_"
           }
         ]
       }

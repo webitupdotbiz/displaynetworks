@@ -1,6 +1,5 @@
 import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { Request, Response } from 'express';
-import type UserCtrlClass from './user.js';
 
 const mockSendEmail = jest.fn<(mailOptions: unknown) => void>();
 const mockNotifyUserStatusChanged = jest.fn<(userId: string, active: boolean) => void>();
@@ -82,10 +81,6 @@ jest.unstable_mockModule('../middleware/utils/jwt.js', () => ({
 
 const { default: UserCtrl } = await import('./user.js');
 const sendEmail = (await import('../services/emailService.js')).default;
-const { notifyUserStatusChanged } = await import('../services/channel.socket.js');
-const { signToken } = await import('../middleware/utils/jwt.js');
-const jwt = (await import('jsonwebtoken')).default;
-const bcrypt = (await import('bcryptjs')).default;
 
 type MockResponse = Response & {
   status: jest.Mock;

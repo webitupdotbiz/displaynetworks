@@ -336,7 +336,7 @@ refresh = async (req: Request, res: Response): Promise<Response> => {
         return res.sendStatus(500);
       }
 
-      const { password: _, ...sanitizedUser } = updatedUser;
+      const { password: _password, ...sanitizedUser } = updatedUser;
       return res.status(200).json(sanitizedUser);
     } catch {
       return res.sendStatus(500);

@@ -13,6 +13,17 @@ import {
   validateOptionalStringArray
 } from '../middleware/validate-body.js';
 
+interface GetAllParams {
+  search?: RegExp;
+  owner?: string;
+  _id?: { $lt: string };
+}
+
+interface GetAllResponse<T> {
+  count?: number;
+  channels?: T[];
+}
+
 export default class ChannelCtrl extends BaseCtrl<IChannel> {
   model = Channel;
   ruleModel = Rule;
@@ -24,7 +35,7 @@ export default class ChannelCtrl extends BaseCtrl<IChannel> {
   }
 
   private sanitizeChannel(channel: IChannel): Omit<IChannel, 'owner'> & { owner: string } {
-    const { owner, ...publicChannel } = channel;
+    const { ...publicChannel } = channel;
     return { ...publicChannel, owner: '' };
   }
 
@@ -57,34 +68,41 @@ export default class ChannelCtrl extends BaseCtrl<IChannel> {
     res.header('Pragma', 'no-cache');
   }
 
-  override getAll = async (req: Request, res: Response) => {
+  override getAll = async (req: Request, res: Response): Promise<Response> => {
     try {
       res.header('Cache-Control', 'private, no-cache, no-store, must-revalidate');
       res.header('Expires', '-1');
       res.header('Pragma', 'no-cache');
-      let params = <any>{};
-      let result = <any>{};
-      const searchRegex = createSearchRegex(req.query.term);
+
+      const params: GetAllParams = {};
+      const result: GetAllResponse<IChannel> = {};
+
+      const searchRegex = createSearchRegex(req.query.term as string | undefined);
       if (searchRegex) params.search = searchRegex;
+
       const ownerScope = this.getOwnerScope(req);
       if (ownerScope && req.params.id && req.params.id !== ownerScope) {
         return res.status(403).json({ error: 'Forbidden' });
       }
+
       if (ownerScope) params.owner = ownerScope;
       else if (req.params.id) params.owner = req.params.id;
+
       const count = await this.model.countDocuments(params);
       result.count = count;
-      //if (req.params.last) params.updatedAt = {'$lt': new Date(req.params.last)};
+
       if (req.params.last) {
         params._id = { $lt: req.params.last };
       }
-      const docs = await this.model.find(params).limit(15).sort({updatedAt: -1});
+
+      const docs = await this.model.find(params).limit(15).sort({ updatedAt: -1 });
       result.channels = docs;
+
       return res.status(200).json(result);
     } catch (err) {
-        const error = err instanceof Error ? err.message : "An unknown error occurred";
-        return res.status(400).json({ error });
-      }
+      const error = err instanceof Error ? err.message : 'An unknown error occurred';
+      return res.status(400).json({ error });
+    }
   };
 
   override get = async (req: Request, res: Response) => {

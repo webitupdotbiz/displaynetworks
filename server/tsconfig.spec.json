@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "types": ["node", "jest"]
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.spec.ts",
+    "test-setup.ts",
+    "../types/express.d.ts"
+  ],
+  "exclude": []
+}

@@ -1,12 +1,52 @@
 import { jest, describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from '@jest/globals';
 import http from 'http';
 import { AddressInfo } from 'net';
-import { WebSocket as WsClient } from 'ws';
+import { WebSocket as WsClient, RawData } from 'ws';
 import jwt from 'jsonwebtoken';
+
+type ChannelDoc = {
+  name: string;
+  owner: string;
+  displayName: string;
+  value: string;
+  search: string;
+  tags: string[];
+  matchedRuleName: string;
+};
+
+type RuleDoc = {
+  name: string;
+  owner: string;
+  overrideUrl: string;
+  matchStrategy: 'ANY' | 'ALL';
+  tags: string[];
+  priority: number;
+  isActive: boolean;
+  scheduleType?: 'CLIENT_CLOCK' | 'GLOBAL_INSTANT';
+  timezone?: string;
+  startTime?: string;
+  endTime?: string;
+};
+
+type ChannelSocketMessage = {
+  type: string;
+  channel?: string;
+  value?: string;
+  version?: number;
+  userId?: string;
+  active?: boolean;
+  sentAt?: string;
+  matchedRuleName?: string;
+};
+
+type MockWebSocket = {
+  readyState: number;
+  send: jest.Mock<(data: string) => void>;
+};
 
 const channelFindOneMock = jest.fn<(query: { name: string }) => { lean: () => Promise<ChannelDoc | null> }>();
 const channelFindMock = jest.fn<(query: { owner: string }, projection?: { name: number; _id: number }) => { lean: () => Promise<{ name: string }[]> }>();
-const ruleFindMock = jest.fn<(query: { owner: string }) => { sort: (sortObj: any) => { lean: () => Promise<RuleDoc[]> } }>();
+const ruleFindMock = jest.fn<(query: { owner: string }) => { sort: (sortObj: Record<string, number>) => { lean: () => Promise<RuleDoc[]> } }>();
 
 jest.unstable_mockModule('../models/channel.js', () => ({
   __esModule: true,
@@ -32,28 +72,6 @@ const {
   startChannelSocketServer
 } = await import('./channel.socket.js');
 
-type ChannelDoc = {
-  name: string;
-  owner: string;
-  displayName: string;
-  value: string;
-  search: string;
-  tags: string[];
-  matchedRuleName: string;
-};
-
-type RuleDoc = {
-  name: string;
-  owner: string;
-  overrideUrl: string;
-  matchStrategy: 'ANY' | 'ALL';
-  tags: string[];
-  priority: number;
-  isActive: boolean;
-  scheduleType?: 'CLIENT_CLOCK' | 'GLOBAL_INSTANT';
-  timezone?: string;
-};
-
 describe('channel.socket service', () => {
   let server: http.Server;
   let baseWsUrl: string;
@@ -76,12 +94,12 @@ describe('channel.socket service', () => {
       });
     });
 
-  const waitForMessage = (ws: WsClient): Promise<any> =>
+  const waitForMessage = (ws: WsClient): Promise<ChannelSocketMessage> =>
     new Promise((resolve, reject) => {
       const timer = setTimeout(() => reject(new Error('Timed out waiting for websocket message')), 2500);
       ws.once('message', (raw: Buffer | string) => {
         clearTimeout(timer);
-        resolve(JSON.parse(raw.toString()));
+        resolve(JSON.parse(raw.toString()) as ChannelSocketMessage);
       });
       ws.once('error', (err: Error) => {
         clearTimeout(timer);
@@ -146,7 +164,7 @@ describe('channel.socket service', () => {
     }));
 
     ruleFindMock.mockImplementation((query) => ({
-      sort: jest.fn<(sortObj: any) => { lean: () => Promise<RuleDoc[]> }>().mockReturnValue({
+      sort: jest.fn<(sortObj: Record<string, number>) => { lean: () => Promise<RuleDoc[]> }>().mockReturnValue({
         lean: jest.fn<() => Promise<RuleDoc[]>>().mockResolvedValue(rulesByOwner.get(query.owner) ?? [])
       })
     }));
@@ -248,7 +266,7 @@ describe('channel.socket service', () => {
   });
 
   it('handles message payload input in string, Buffer, ArrayBuffer, and Array formats', () => {
-    const hub = new ChannelSocketHub() as any;
+    const hub = new ChannelSocketHub() as unknown as { toUtf8String: (data: unknown) => string };
     expect(hub.toUtf8String('hello')).toBe('hello');
     expect(hub.toUtf8String(Buffer.from('hello'))).toBe('hello');
 
@@ -441,8 +459,12 @@ describe('channel.socket service', () => {
     });
     rulesByOwner.set('owner-db', []);
 
-    const hub = new ChannelSocketHub() as any;
-    const wsMock: any = { readyState: WsClient.OPEN, send: jest.fn() };
+    const hub = new ChannelSocketHub() as unknown as {
+      addChannelSubscription: (channel: string, ws: unknown) => void;
+      socketTimezones: Map<unknown, string>;
+      notifyOwnerChanged: (owner: string) => Promise<void>;
+    };
+    const wsMock: MockWebSocket = { readyState: WsClient.OPEN, send: jest.fn() };
 
     hub.addChannelSubscription('db-owner-channel', wsMock);
     hub.socketTimezones.set(wsMock, 'UTC');
@@ -452,8 +474,12 @@ describe('channel.socket service', () => {
   });
 
   it('stores timezone from display handshake and normalizes invalid values', () => {
-    const hub = new ChannelSocketHub() as any;
-    const wsMock: any = { readyState: WsClient.OPEN, send: jest.fn() };
+    const hub = new ChannelSocketHub() as unknown as {
+      socketInitialized: Set<unknown>;
+      handleSocketMessage: (ws: unknown, channel: string, data: RawData) => void;
+      socketTimezones: Map<unknown, string>;
+    };
+    const wsMock: MockWebSocket = { readyState: WsClient.OPEN, send: jest.fn() };
 
     hub.socketInitialized.add(wsMock);
     hub.handleSocketMessage(wsMock, 'any', Buffer.from(JSON.stringify({
@@ -494,16 +520,18 @@ describe('channel.socket service', () => {
         tags: ['news'],
         priority: 0,
         isActive: true,
-        scheduleType: 'CLIENT_CLOCK'
-      } as RuleDoc & { startTime: string; endTime: string }
-    ] as any);
+        scheduleType: 'CLIENT_CLOCK',
+        startTime: start,
+        endTime: end
+      }
+    ]);
 
-    (rulesByOwner.get('owner-tz') as any)[0].startTime = start;
-    (rulesByOwner.get('owner-tz') as any)[0].endTime = end;
-
-    const hub = new ChannelSocketHub() as any;
-    const wsNy: any = { readyState: WsClient.OPEN, send: jest.fn() };
-    const wsUtc: any = { readyState: WsClient.OPEN, send: jest.fn() };
+    const hub = new ChannelSocketHub() as unknown as {
+      socketTimezones: Map<unknown, string>;
+      publishToSocket: (channel: string, ws: unknown, force?: boolean) => Promise<boolean>;
+    };
+    const wsNy: MockWebSocket = { readyState: WsClient.OPEN, send: jest.fn() };
+    const wsUtc: MockWebSocket = { readyState: WsClient.OPEN, send: jest.fn() };
 
     hub.socketTimezones.set(wsNy, 'America/New_York');
     hub.socketTimezones.set(wsUtc, 'UTC');
@@ -511,8 +539,8 @@ describe('channel.socket service', () => {
     await hub.publishToSocket('regional', wsNy, true);
     await hub.publishToSocket('regional', wsUtc, true);
 
-    const nyPayload = JSON.parse(wsNy.send.mock.calls[0][0]);
-    const utcPayload = JSON.parse(wsUtc.send.mock.calls[0][0]);
+    const nyPayload = JSON.parse(wsNy.send.mock.calls[0][0]) as ChannelSocketMessage;
+    const utcPayload = JSON.parse(wsUtc.send.mock.calls[0][0]) as ChannelSocketMessage;
 
     expect(nyPayload.value).toBe('https://example.com/ny-override');
     expect(utcPayload.value).toBe('https://example.com/default');
@@ -596,8 +624,11 @@ describe('channel.socket service', () => {
     });
     rulesByOwner.set('owner-4', []);
 
-    const hub = new ChannelSocketHub() as any;
-    const wsMock: any = {
+    const hub = new ChannelSocketHub() as unknown as {
+      socketTimezones: Map<unknown, string>;
+      publishToSocket: (channel: string, ws: unknown, force?: boolean) => Promise<boolean>;
+    };
+    const wsMock: MockWebSocket = {
       readyState: WsClient.OPEN,
       send: jest.fn()
     };
@@ -615,8 +646,11 @@ describe('channel.socket service', () => {
   });
 
   it('handles safeSend socket send errors by removing subscription', () => {
-    const hub = new ChannelSocketHub() as any;
-    const wsMock: any = {
+    const hub = new ChannelSocketHub() as unknown as {
+      removeSubscription: (ws: unknown) => void;
+      safeSend: (ws: unknown, payload: string) => void;
+    };
+    const wsMock: MockWebSocket = {
       readyState: WsClient.OPEN,
       send: jest.fn().mockImplementation(() => {
         throw new Error('Send failed');
@@ -654,7 +688,11 @@ describe('channel.socket service', () => {
   });
 
   it('reevaluates all subscribed channels on scheduler tick', async () => {
-    const hub = new ChannelSocketHub() as any;
+    const hub = new ChannelSocketHub() as unknown as {
+      channelSubscribers: Map<string, Set<unknown>>;
+      publishIfChanged: (channel: string) => Promise<boolean>;
+      reevaluateSubscribedChannels: () => Promise<void>;
+    };
     hub.channelSubscribers.set('alpha', new Set());
     hub.channelSubscribers.set('beta', new Set());
 
@@ -690,7 +728,9 @@ describe('channel.socket service', () => {
       }
     ]);
 
-    const hub = new ChannelSocketHub() as any;
+    const hub = new ChannelSocketHub() as unknown as {
+      resolveEffectiveChannel: (channel: string, tz: string) => Promise<{ publicChannel: { value: string; matchedRuleName: string } }>;
+    };
     const resolved = await hub.resolveEffectiveChannel('music', 'UTC');
 
     expect(resolved.publicChannel.value).toBe('https://example.com/rock');

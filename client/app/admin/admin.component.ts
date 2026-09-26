@@ -1,4 +1,4 @@
-import { Component, ViewChild, ElementRef, inject, OnDestroy } from '@angular/core';
+import { Component, ViewChild, ElementRef, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
@@ -25,7 +25,7 @@ import { BaseTableComponent } from '../shared/base-table.component';
   standalone: true,
     imports: [CommonModule, RouterModule, ReactiveFormsModule, FormsModule, ToastComponent, TagsComponent, LoadingComponent, NavLinksComponent, NavbarBrandComponent, AppConfirmModal]
 })
-export class AdminComponent extends BaseTableComponent<UserType> {
+export class AdminComponent extends BaseTableComponent<UserType> implements OnInit, OnDestroy {
   @ViewChild('vpanelDiv') vpanelDiv: ElementRef | undefined;
   @ViewChild('infoSpan') infoSpan: ElementRef | undefined;
   @ViewChild('color') color: ElementRef | undefined;

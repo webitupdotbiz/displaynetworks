@@ -1,7 +1,9 @@
 import { jest, describe, it, expect, beforeEach, afterAll } from '@jest/globals';
 
-const mockSign = jest.fn();
-const mockVerify = jest.fn();
+type VerifyCallback = (err: Error | null, decoded: unknown) => void;
+
+const mockSign = jest.fn<(payload: unknown, secret: string, options: { expiresIn: number }) => string>();
+const mockVerify = jest.fn<(token: string, secret: string, callback?: VerifyCallback) => void>();
 
 jest.unstable_mockModule('jsonwebtoken', () => ({
   __esModule: true,
@@ -126,7 +128,7 @@ describe('jwt utility module', () => {
       const secret = 'secret';
       const expiresInSeconds = 3600;
 
-      mockSign.mockReturnValue('signed.jwt.token' as any);
+      mockSign.mockReturnValue('signed.jwt.token');
 
       const token = signToken(payload, secret, expiresInSeconds);
 
@@ -143,9 +145,8 @@ describe('jwt utility module', () => {
         exp: 2
       };
 
-      mockVerify.mockImplementation((token, secret, callback?: any) => {
+      mockVerify.mockImplementation((token, secret, callback) => {
         if (callback) callback(null, expectedPayload);
-        return expectedPayload as any;
       });
 
       const result = await verifyJwt('my.token.here', 'secret');
@@ -157,9 +158,8 @@ describe('jwt utility module', () => {
     it('rejects with an error when jwt.verify fails', async () => {
       const expectedError = new Error('invalid token');
 
-      mockVerify.mockImplementation((token, secret, callback?: any) => {
+      mockVerify.mockImplementation((token, secret, callback) => {
         if (callback) callback(expectedError, null);
-        return undefined as any;
       });
 
       await expect(verifyJwt('invalid.token', 'secret')).rejects.toThrow('invalid token');

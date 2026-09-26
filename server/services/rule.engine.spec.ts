@@ -110,7 +110,7 @@ describe('RuleEngine', () => {
 
     const match = RuleEngine.findFirstMatch(baseChannel, [rule], {
       now: new Date('2024-01-01T14:00:00.000Z')
-    } as any);
+    });
 
     expect(match).toBe(rule);
   });
@@ -126,7 +126,7 @@ describe('RuleEngine', () => {
     const match = RuleEngine.findFirstMatch(baseChannel, [rule], {
       now: new Date('2024-01-01T05:00:00.000Z'),
       displayTimezone: 'UTC'
-    } as any);
+    });
 
     expect(match).toBe(rule);
   });
