@@ -1,6 +1,6 @@
 # Display Networks [![MIT license](http://img.shields.io/badge/license-MIT-lightgrey.svg)](http://opensource.org/licenses/MIT)
 
-Open Source Digital Signage Platform
+[Open Source Digital Signage Platform](https://displaynet.works)
 
 ## ⚙️ How It Works
 
