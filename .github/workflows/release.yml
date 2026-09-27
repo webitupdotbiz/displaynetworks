@@ -1,0 +1,39 @@
+name: Build and Publish Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Read .nvmrc
+        id: nvm
+        run: echo "NODE_VERSION=$(cat displaynetworks/.nvmrc)" >> $GITHUB_ENV
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install and Build
+        run: |
+          cd displaynetworks
+          npm ci
+          npm run build
+
+      - name: Package Release Archive
+        run: |
+          cd displaynetworks
+          zip -r ../displaynetworks.zip dist sys package.json package-lock.json .nvmrc
+
+      - name: Upload Zip to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: displaynetworks.zip
