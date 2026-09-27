@@ -13,25 +13,19 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Read .nvmrc
-        id: nvm
-        run: echo "NODE_VERSION=$(cat displaynetworks/.nvmrc)" >> $GITHUB_ENV
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: '.nvmrc'
 
       - name: Install and Build
         run: |
-          cd displaynetworks
           npm ci
           npm run build
 
       - name: Package Release Archive
         run: |
-          cd displaynetworks
-          zip -r ../displaynetworks.zip dist sys package.json package-lock.json .nvmrc
+          zip -r displaynetworks.zip dist sys package.json package-lock.json .nvmrc
 
       - name: Upload Zip to Release
         uses: softprops/action-gh-release@v2
