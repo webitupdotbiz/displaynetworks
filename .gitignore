@@ -23,7 +23,6 @@
 npm-debug.log
 testem.log
 /typings
-/client/environments/**
 
 # e2e
 /e2e/*.js
