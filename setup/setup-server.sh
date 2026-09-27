@@ -46,7 +46,6 @@ apt_install() {
     done
 }
 
-
 ask_var() {
     local var_name=$1
     local prompt_text=$2
@@ -239,7 +238,6 @@ else
     ask_var "BACKUP_RETENTION" "Backup Retention" "10d"
 fi
 
-APP_URL="https://webitup.biz/displaynetworks.zip"
 PORT=3000
 
 TOTAL_STEPS=17
@@ -551,24 +549,27 @@ if [ "$RECOVER" = true ]; then
 fi
 
 show_progress
-sudo -i -u "$APP_USER" APP_DIR="$APP_DIR" PORT="$PORT" APP_URL="$APP_URL" APP_ADMIN_LOGIN_EMAIL="$APP_ADMIN_LOGIN_EMAIL" APP_ADMIN_LOGIN_PASSWORD="$APP_ADMIN_LOGIN_PASSWORD" BACKUP_FREQUENCY="$BACKUP_FREQUENCY" APP_USER="$APP_USER" bash << EOF
+sudo -i -u "$APP_USER" APP_DIR="$APP_DIR" PORT="$PORT" APP_ADMIN_LOGIN_EMAIL="$APP_ADMIN_LOGIN_EMAIL" APP_ADMIN_LOGIN_PASSWORD="$APP_ADMIN_LOGIN_PASSWORD" BACKUP_FREQUENCY="$BACKUP_FREQUENCY" APP_USER="$APP_USER" bash << EOF
 set -e
 
 cd "$APP_DIR"
 
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh | bash
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/HEAD/install.sh | bash
 
 export NVM_DIR="\$HOME/.nvm"
 [ -s "\$NVM_DIR/nvm.sh" ] && . "\$NVM_DIR/nvm.sh"
 [ -s "\$NVM_DIR/bash_completion" ] && . "\$NVM_DIR/bash_completion"
 
-wget -O app.zip "$APP_URL"
+LATEST_ZIP_URL=\$(curl -s https://api.github.com/repos/webitupdotbiz/displaynetworks/releases/latest | grep "browser_download_url.*displaynetworks.zip" | cut -d '"' -f 4)
+
+wget -O app.zip "\$LATEST_ZIP_URL"
 unzip -o app.zip
+rm -f app.zip
 
 nvm install
 nvm use
 
-npm install --omit=dev
+npm ci --omit=dev
 
 NODE_ENV=production node sys/create-admin.js --email "$APP_ADMIN_LOGIN_EMAIL" --password "$APP_ADMIN_LOGIN_PASSWORD" --role admin
 
@@ -593,7 +594,7 @@ npm install -g pm2
 pm2 start pm2.config.cjs
 pm2 save
 
-sudo env PATH=\$PATH:\$NVM_BIN \$NVM_BIN/pm2 startup systemd -u "$APP_USER" --hp "/home/$APP_USER"
+sudo env PATH="\$PATH:\$NVM_BIN" "\$NVM_BIN/pm2" startup systemd -u "$APP_USER" --hp "/home/$APP_USER"
 
 NEW_JOB="$BACKUP_FREQUENCY /bin/bash $APP_DIR/sys/backup.sh"
 (crontab -l 2>/dev/null | grep -v "sys/backup.sh" || true; echo "\$NEW_JOB") | crontab -
