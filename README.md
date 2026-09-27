@@ -5,8 +5,8 @@
 ## ⚙️ How It Works
 
 1. **Install the Display Networks server**  
-   On a self-hosted Debian VPS:
-   - Create an `A` record pointing `yourdomain.com` to your server IP.
+   Create an `A` record pointing `yourdomain.com` to your server IP.
+   Log in as root into your self-hosted Debian VPS using ssh:
    - Run `setup-server.sh` script to set up server.
    - This configures:
      - Nginx with HTTPS via Let's Encrypt
