@@ -130,7 +130,7 @@ if echo "$PCI_DEVICES" | grep -Eiq 'NVIDIA|Nouveau'; then
 fi
 
 # Base non-package steps + count of dynamic packages
-BASE_STEPS=6
+BASE_STEPS=7
 TOTAL_STEPS=$(( BASE_STEPS + ${#PKGS[@]} ))
 
 echo "" >&3
