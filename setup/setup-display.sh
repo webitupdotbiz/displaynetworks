@@ -1,7 +1,6 @@
 #!/bin/bash
 set -euo pipefail
 
-TOTAL_STEPS=9
 CURRENT_STEP=0
 ERR_LOG="/tmp/dn_kiosk_install_err.log"
 
@@ -55,9 +54,6 @@ exec 3>&1 4>&2
 show_progress() {
     CURRENT_STEP=$((CURRENT_STEP + 1))
     local percent=$(( CURRENT_STEP * 100 / TOTAL_STEPS ))
-    if (( percent > 99 )); then
-        percent=99
-    fi
     local filled=$((percent * 40 / 100))
     local empty=$((40 - filled))
     printf "\r\033[K\033[32m[%.*s%.*s]\033[0m %3d%%" \
@@ -66,7 +62,7 @@ show_progress() {
       "$percent" >&3
 }
 
-trap 'BROWSER_URL
+trap '
   exit_code=$?
   exec 1>&3 2>&4
   printf "\n\n\033[31mError on line %d (Exit Code %d): %s\033[0m\n" "$LINENO" "$exit_code" "$BASH_COMMAND"
@@ -86,42 +82,10 @@ ask_var "APP_USER" "Enter application username" ""
 ask_var "BROWSER_URL" "Enter Kiosk target URL" "https://displaynet.works"
 ask_var "ROTATION" "Enter display rotation (normal, left, right, inverted)" "normal"
 
-echo "" >&3
-exec 1>/dev/null 2>"$ERR_LOG"
-
-show_progress
-if ! id "$APP_USER" &>/dev/null; then
-    useradd -m -s /bin/bash "$APP_USER"
-fi
-
 DNWHOME="/usr/share/displaynetworks"
 DIRECTORY="/tmp/displaynetworks-install"
 ARCHITECTURE="$(dpkg --print-architecture)"
 
-mkdir -p "$DIRECTORY"
-cd "$DIRECTORY"
-
-show_progress
-if [[ -f /etc/apt/sources.list.d/debian.sources ]]; then
-    sed -i 's/Components: main.*/Components: main contrib non-free non-free-firmware/' /etc/apt/sources.list.d/debian.sources
-fi
-if [[ -f /etc/apt/sources.list ]]; then
-    sed -i 's/\bmain\b/main contrib non-free non-free-firmware/g' /etc/apt/sources.list
-fi
-
-APT_FLAGS=(
-    -y
-    -o Acquire::Retries=3
-    -o Dpkg::Options::="--force-confdef"
-    -o Dpkg::Options::="--force-confold"
-)
-
-export DEBIAN_FRONTEND=noninteractive
-
-apt-get update
-apt_install pciutils
-
-show_progress
 PKGS=(
     xorg
     lightdm
@@ -165,8 +129,45 @@ if echo "$PCI_DEVICES" | grep -Eiq 'NVIDIA|Nouveau'; then
     )
 fi
 
+# Base non-package steps + count of dynamic packages
+BASE_STEPS=6
+TOTAL_STEPS=$(( BASE_STEPS + ${#PKGS[@]} ))
+
+echo "" >&3
+exec 1>/dev/null 2>"$ERR_LOG"
+
 show_progress
-apt_install "${PKGS[@]}"
+if ! id "$APP_USER" &>/dev/null; then
+    useradd -m -s /bin/bash "$APP_USER"
+fi
+
+mkdir -p "$DIRECTORY"
+cd "$DIRECTORY"
+
+show_progress
+if [[ -f /etc/apt/sources.list.d/debian.sources ]]; then
+    sed -i 's/Components: main.*/Components: main contrib non-free non-free-firmware/' /etc/apt/sources.list.d/debian.sources
+fi
+if [[ -f /etc/apt/sources.list ]]; then
+    sed -i 's/\bmain\b/main contrib non-free non-free-firmware/g' /etc/apt/sources.list
+fi
+
+APT_FLAGS=(
+    -y
+    -o Acquire::Retries=3
+    -o Dpkg::Options::="--force-confdef"
+    -o Dpkg::Options::="--force-confold"
+)
+
+export DEBIAN_FRONTEND=noninteractive
+
+apt-get update
+apt_install pciutils
+
+for pkg in "${PKGS[@]}"; do
+    show_progress
+    apt_install "$pkg"
+done
 
 if [[ "$ARCHITECTURE" != "armhf" ]]; then
     ln -sf /usr/bin/chromium /usr/bin/chromium-browser
@@ -283,7 +284,7 @@ cd /tmp
 rm -rf "$DIRECTORY"
 rm -f "$ERR_LOG"
 
-printf "\n\r\033[K\033[32m[========================================]\033[0m 100%%\n\n" >&3
+printf "\n\n" >&3
 
 exec 1>&3 2>&4
 
